@@ -1,40 +1,53 @@
-# 项目编码规范
+---
+trigger: always_on
+---
 
-## 一、通用规范
+## 编码约束
+
+### 核心原则
+
+- 先约束再实现：写代码前明确规范边界，不要写完再补规范
+- 自动化优先于文档：没有 lint/format/CI 强制执行的规范只是建议
+- 不只盯格式：还要覆盖结构、复用边界、耦合和性能
+- 遗留项目渐进收敛：先硬规则后软规则、先核心模块后边缘模块
+
+### 红线
+
+- 不写无注释函数，尤其是业务函数、工具函数和组件方法
+- 不只有规范文档而缺少 lint/format/CI 强制执行
+- 不在遗留项目里一次性强推全部规则
+- 不把规范工作缩减成纯格式化问题
+- 不忽略组件封装、复用和架构边界
+- 不在框架或技术栈升级后长期放任规范过期
+
+---
+
+## 通用规范
 
 1. 文件内容编码统一采用 UTF-8
-2. 变量命名：驼峰式，例：defaultConfig
+2. 变量命名：驼峰式，例：`defaultConfig`
 3. class 命名：小写字母+连字符
-4. 业务相关命名使用中文拼音首字母相连，其余使用英文单词，例：数据采集 → sjcj、首页 → home
+4. 业务相关命名使用中文拼音首字母相连，其余使用英文单词，例：数据采集 → `sjcj`、首页 → `home`
 5. 注释解释"为什么"，而非"做了什么"
 6. 文本缩进 2 个空格
 7. 提交前格式化代码
-8. 文件/模块名简洁描述功能业务，例：org-manage、edit-cur-dept、personnel-list
+8. 文件/模块名简洁描述功能业务，例：`org-manage`、`edit-cur-dept`、`personnel-list`
 9. 数据为空时用 `--` 表示
 
-## 二、Vue 规范
+---
+
+## Vue 规范
 
 1. 文件结构顺序：`<template>` → `<script>` → `<style lang="scss">`
 2. 文件名使用短横线命名，例：`user-profile.vue`
 3. 组件名使用 PascalCase，例：`UserProfile`
 4. Props 定义必须使用驼峰命名、指定类型、添加注释
-   ```javascript
-   props: {
-     userInfo: {
-       type: Object,
-       required: true,
-       default: () => ({})
-     }
-   }
-   ```
 5. 自动化测试 ID 格式：`模块名-功能描述-类型`
-   ```html
-   <input id="login-username-input" />
-   <button id="xxts-xxlb-search-btn">搜索</button>
-   ```
 6. 生命周期钩子顺序：name → props → data → computed → watch → created → mounted → methods
 
-## 三、HTML 规范
+---
+
+## HTML 规范
 
 1. 优先使用语义化元素（header、nav、h1 等）
 2. 保持代码简洁
@@ -43,7 +56,9 @@
 5. HTML 注释格式：`<!--<div></div>-->`
 6. input/button 必须添加测试用 id
 
-## 四、CSS / SCSS / LESS 规范
+---
+
+## CSS / SCSS / LESS 规范
 
 1. 减少 ID 选择器，避免 !important（公共样式除外）
 2. 避免覆盖样式，尽量不使用行内样式
@@ -60,30 +75,32 @@
 13. **禁止**使用 `max-height`
 14. **禁止**在 HTML 中使用 style
 
-## 五、JavaScript 规范
+---
+
+## JavaScript 规范
 
 1. 避免多余逗号，例：`var arr = [1, 2, 3]`
 2. 方法封装实现代码重用，避免副作用
 3. 使用严格条件判断符
 4. 语句以分号结束（使用 ESLint 除外）
-5. 布尔变量以 `is` 开头，例：isArray
+5. 布尔变量以 `is` 开头，例：`isArray`
 6. 变量声明统一放在函数起始位置
 7. 条件判断使用多个 if，少用 if-else if-else
-8. 推荐定义变量：`var a = 1, y = 2`
-9. 推荐数组写法：`var array = [1, 2, 3]`
-10. 推荐对象写法：
-    ```javascript
-    var object = { a: 1, b: 2 }
-    ```
-11. 循环优先使用 forEach / map
-    ```javascript
-    array.forEach(function(value, index, array) {
-      console.log(value)
-    })
-    ```
-12. 尽可能减少第三方库使用
+8. 循环优先使用 forEach / map
+9. 尽可能减少第三方库使用
 
-## 六、注释规范
+---
+
+## TypeScript 规范
+
+1. 使用 TypeScript 严格模式
+2. 遵循组件化开发原则
+3. 保持代码可读性和可维护性
+4. 类型定义添加中文注释
+
+---
+
+## 注释规范
 
 1. 文件注释（文件最前面）：
    ```javascript
@@ -97,10 +114,7 @@
    ```
 2. 单行注释：`// `（注释符后加空格）
 3. 多行注释：`/* ... */`（结束符前留空格）
-4. TODO 标记：未实现功能必须标注
-   ```javascript
-   // TODO 未处理分页
-   ```
+4. TODO 标记：未实现功能必须标注，例：`// TODO 未处理分页`
 5. 文档注释：
    ```javascript
    /**
@@ -112,12 +126,19 @@
     */
    ```
 
-## 七、项目结构
+---
 
-```
-src/
-├── components/    # 公共组件
-├── utils/         # 工具方法
-├── api/           # 接口定义
-└── styles/        # 全局样式
-```
+## 高内聚低耦合
+
+- 组件内：组件包含与其功能相关的所有代码和资源，紧密相关
+- 功能内：将特定功能的代码组织在独立模块中
+- 组件间：通过 Props/Events 通信，不直接访问内部状态
+- 模块间：减少依赖关系
+
+实现方法：
+
+1. 组件化开发：拆分为小可重用组件，每个处理单一功能
+2. 单一职责原则：每个组件/模块只负责一个功能
+3. 明确定义接口：使用属性、事件或函数通信
+4. 依赖注入：减少硬依赖，便于替换和测试
+5. 模块化开发：减少全局变量和依赖
