@@ -96,7 +96,7 @@ src/
 3. **`src/types/` 只放全局通用类型**（如 `global.d.ts`、第三方声明等），不存放业务类型
 4. 公共组件放 `src/components/`，页面私有组件放 `src/pages/<page>/components/`
 5. 样式文件必须命名为 `index.less`，且与组件文件在同一文件夹内
-6. **`stores/` 和 `hooks/` 只放公共的**，页面私有的 Zustand Store 或 Hook 放对应页面目录下
+6. **`stores/` 和 `hooks/` 只放公共的**，页面私有的 Zustand Store 或 Hook 放对应页面目录下,stores默认不使用在功能模块中
 7. **`services/` 中每个 API 模块也必须是独立文件夹**（如 `XxxService/index.ts`），不直接放 .ts 文件
 
 #### 3. 文件命名规范
