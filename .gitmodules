@@ -1,0 +1,3 @@
+[submodule "front/skills"]
+	path = front/skills
+	url = https://github.com/TomorrowLM/lm-skill.git
