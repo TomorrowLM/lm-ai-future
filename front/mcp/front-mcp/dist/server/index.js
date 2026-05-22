@@ -1,12 +1,12 @@
-import { helloWorldTool, handleHelloWorldTool } from "../server/base/hello-world/index.js";
+// import { helloWorldTool, handleHelloWorldTool } from "../server/base/hello-world/index.js";
 import { swaggerGetModelTool, handleSwaggerGetModelTool } from "../server/base/swagger/index.js";
 import { createApiTool, handleCreateApiTool } from "../server/feature/createApi/index.js";
 import { createUiTool, handleCreateUiTool } from "../server/feature/createUI/index.js";
-export const tools = [helloWorldTool, swaggerGetModelTool, createApiTool, createUiTool];
+export const tools = [swaggerGetModelTool, createApiTool, createUiTool];
 export async function dispatchTool(request) {
     switch (request.params.name) {
-        case helloWorldTool.name:
-            return handleHelloWorldTool(request);
+        // case helloWorldTool.name:
+        //   return handleHelloWorldTool(request);
         case swaggerGetModelTool.name:
             return handleSwaggerGetModelTool(request);
         case createApiTool.name:

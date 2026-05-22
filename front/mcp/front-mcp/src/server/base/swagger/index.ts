@@ -49,7 +49,7 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
   const names = Object.keys(schemas).sort((a, b) => a.localeCompare(b));
 
   const resolveRefs = args.resolveRefs ?? true;
-  const maxDepth = Number.isFinite(args.maxDepth) ? Math.max(0, Math.floor(args.maxDepth!)) : 6;
+  const maxDepth = Number.isFinite(args.maxDepth) ? Math.max(0, Math.floor(args.maxDepth!)) : 15;
 
   if (!args.name) {
     return textResponseFromJson({ models: names });

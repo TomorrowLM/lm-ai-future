@@ -5,9 +5,9 @@
       "timeout": 60000,
       "command": "node",
       "args": [
-        "d:/work/demo/front/qiankun/ai/mcp/front-mcp/dist/index.js"
+        "d:/work/ai-future/front/mcp/front-mcp/dist/index.js"
       ],
-      "cwd": "d:/work/demo/front/qiankun/ai/mcp/front-mcp"
+      "cwd": "d:/work/ai-future/front/mcp/front-mcp"
     },
     "gitnexus": {
       "type": "stdio",
