@@ -3,6 +3,6 @@
  */
 
 export * from "@/server/base/swagger/types.js";
-export * from "@/server/base/swagger/utils/document.js";
+export * from "@/server/base/swagger/analys/index.js";
 export * from "@/server/base/swagger/utils/schema.js";
 export * from "@/server/base/swagger/utils/operation.js";

@@ -16,6 +16,7 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
+    "@modelcontextprotocol/inspector": "0.21.2",
     "@modelcontextprotocol/sdk": "^1.27.1"
   },
   "devDependencies": {

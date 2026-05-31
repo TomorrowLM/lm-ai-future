@@ -4,7 +4,7 @@ export const swaggerGetModelInputSchema = {
         source: {
             type: "string",
             description: "Swagger/OpenAPI 文档 URL 或本地文件路径（JSON）",
-            default: "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/",
+            default: "",
         },
         document: {
             type: "object",

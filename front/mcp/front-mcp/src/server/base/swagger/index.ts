@@ -30,7 +30,7 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
       const last = parts.length > 0 ? decodeURIComponent(parts[parts.length - 1]) : "";
       if (last) {
         args.name = last;
-        console.error(`[MCP Swagger Debug] extracted name from fragment: ${args.name}`);
+        // console.error(`[MCP Swagger Debug] extracted name from fragment: ${args.name}`);
       }
     }
   } catch (err) {
@@ -38,14 +38,14 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
   }
 
   // 调试信息 - 会在 MCP 服务器终端显示
-  console.error(`[MCP Swagger Debug] request.params.arguments = ${JSON.stringify(request.params.arguments)}`);
-  console.error(`[MCP Swagger Debug] args.source = ${JSON.stringify(args.source)}`);
-  console.error(`[MCP Swagger Debug] final args.source = ${JSON.stringify(args.source)}`);
+  // console.error(`[MCP Swagger Debug] request.params.arguments = ${JSON.stringify(request.params.arguments)}`);
+  // console.error(`[MCP Swagger Debug] args.source = ${JSON.stringify(args.source)}`);
+  // console.error(`[MCP Swagger Debug] final args.source = ${JSON.stringify(args.source)}`);
 
   const doc = await loadDocument(args); // 加载 Swagger/OpenAPI 文档
   console.error(`[MCP Swagger Debug] document loaded successfully`, doc);
   const schemas = getSchemasRoot(doc as any); // 提取模型定义根节点
-  console.error(`DEBUG handleSwaggerGetModelTool: schemas = ${JSON.stringify(schemas)}`);
+  // console.error(`DEBUG handleSwaggerGetModelTool: schemas = ${JSON.stringify(schemas)}`);
   const names = Object.keys(schemas).sort((a, b) => a.localeCompare(b));
 
   const resolveRefs = args.resolveRefs ?? true;
@@ -58,7 +58,7 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
   const rawModel = (schemas as any)[args.name];
   if (!rawModel) {
     const found = findOperationByKeyword(doc as any, args.name);
-    console.error(`DEBUG handleSwaggerGetModelTool: found operation = ${JSON.stringify(found)}`);
+    // console.error(`DEBUG handleSwaggerGetModelTool: found operation = ${JSON.stringify(found)}`);
     if (found) {
       const io = extractOperationIO(doc as any, found);
       const operationResult = {

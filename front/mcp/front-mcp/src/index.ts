@@ -53,7 +53,7 @@ process.on('SIGINT', async () => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("LM MCP Server 已通过 stdio 启动...");
+  console.error("LM MCP Server v2.0 (parallel-probe+cache) 已通过 stdio 启动...");
 }
 
 main().catch(console.error);
