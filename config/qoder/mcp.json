@@ -1,0 +1,77 @@
+{
+  "mcpServers": {
+      "type": "stdio",
+      "timeout": 10000,
+      "command": "node",
+      "args": [
+        "d:/work/ai-future/front/mcp/front-mcp/dist/index.js"
+      ],
+      "cwd": "d:/work/ai-future/front/mcp/front-mcp"
+    },
+    "gitnexus": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "gitnexus",
+        "mcp"
+      ]
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "--registry",
+        "https://registry.npmjs.org",
+        "chrome-devtools-mcp@0.21.0"
+      ]
+    },
+    "mind-map": {
+      "command": "npx",
+      "args": [
+        "@lucianaib/mind-map-mcp"
+      ]
+    },
+    "drawio-mcp": {
+      "command": "npx",
+      "args": [
+        "@drawio/mcp@latest"
+      ]
+    },
+    "Fetch": {
+      "timeout": 60000,
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "type": "stdio",
+      "disabled": false
+    },
+    "MCP NPX Fetch": {
+      "timeout": 60000,
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tokenizin/mcp-npx-fetch"
+      ],
+      "type": "stdio",
+      "disabled": false
+    },
+    "Framelink Figma MCP Server": {
+      "timeout": 60000,
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--figma-api-key=",
+        "--stdio"
+      ],
+      "type": "stdio",
+      "disabled": false
+    }
+  }
+}
