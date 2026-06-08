@@ -1,5 +1,6 @@
 {
   "mcpServers": {
+    "lm": {
       "type": "stdio",
       "timeout": 10000,
       "command": "node",
@@ -57,18 +58,6 @@
       "args": [
         "-y",
         "@tokenizin/mcp-npx-fetch"
-      ],
-      "type": "stdio",
-      "disabled": false
-    },
-    "Framelink Figma MCP Server": {
-      "timeout": 60000,
-      "command": "npx",
-      "args": [
-        "-y",
-        "figma-developer-mcp",
-        "--figma-api-key=",
-        "--stdio"
       ],
       "type": "stdio",
       "disabled": false
