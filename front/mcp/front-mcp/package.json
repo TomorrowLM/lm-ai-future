@@ -9,10 +9,10 @@
     "inspector": "npx @modelcontextprotocol/inspector --config ./inspector.json",
     "start:watch": "nodemon --watch src --ext ts --exec \"pnpm run build && node dist/index.js\"",
     "build": "tsc && tsc-alias",
-    "call-hello": "node scripts/call-hello.mjs",
-    "call-get-swagger": "node scripts/call-get-swagger.mjs",
-    "call-create-api": "node scripts/call-create-api.mjs",
-    "call-create-ui": "node scripts/call-create-ui.mjs",
+    "call-hello": "node test/call-hello.mjs",
+    "call-get-swagger": "node test/call-get-swagger.mjs",
+    "call-create-api": "node test/call-create-api.mjs",
+    "call-create-ui": "node test/call-create-ui.mjs",
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {

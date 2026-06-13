@@ -2,7 +2,7 @@
  * 测试 URL 解析功能
  */
 
-import { parseFragment, buildCandidateUrls, tryFetchJson } from "./dist/server/base/swagger/analys/url-parser.js";
+import { parseFragment, buildCandidateUrls, tryFetchJson } from "../dist/server/base/swagger/analys/url-parser.js";
 
 const testUrl = "https://api-test.17an.com/dsb/yqarw/api/doc.html#/%E4%BB%BB%E5%8A%A1%E7%AE%A1%E7%90%86/%E4%B8%80%E8%B5%B7%E5%AE%89-%E5%AE%9E%E6%97%B6%E9%9F%B3%E8%A7%86%E9%A2%91-%E4%B8%9A%E5%8A%A1%E7%9B%B8%E5%85%B3/getCallSessionByIdUsingGET";
 
