@@ -1,247 +1,299 @@
-# Swagger 工具文档
+# Swagger 解析模块
 
 ## 目录
 
-- [默认 Source 参数配置](#默认-source-参数配置)
-- [Analys 模块架构](#analys-模块架构)
+- [模块架构](#模块架构)
+- [Swagger 解析流程](#swagger-解析流程)
+- [入口层：handleSwaggerGetModelTool](#入口层handleswaggergetmodeltool)
+- [analys 文档分析层](#analys-文档分析层)
+  - [document.ts - 加载入口](#documentts---加载入口)
+  - [remote-loader.ts - 远程加载](#remote-loaderts---远程加载)
+  - [html-parser.ts - HTML 提取](#html-parserts---html-提取)
+  - [url-parser.ts - URL 解析](#url-parserts---url-解析)
+  - [cache.ts - 缓存管理](#cachets---缓存管理)
+- [utils 工具函数层](#utils-工具函数层)
+  - [operation.ts - 操作查找与提取](#operationts---操作查找与提取)
+  - [schema.ts - $ref 递归解析](#schemats---ref-递归解析)
 - [解析优先级策略](#解析优先级策略)
 - [使用方式](#使用方式)
+- [缓存策略](#缓存策略)
 
 ---
 
-## 默认 Source 参数配置
+## 模块架构
 
-## 概述
-
-已成功修改 MCP Swagger 工具，使其在未提供 `source` 参数时自动使用默认 URL：`https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/`
-
-## 修改内容
-
-### 1. 修改 `swaggerGetModelInputSchema`（ai/mcp/src/tools/swagger/index.ts:13-38）
-
-在 `source` 属性中添加了 `default` 字段：
-```typescript
-source: {
-  type: "string",
-  description: "Swagger/OpenAPI 文档 URL 或本地文件路径（JSON）",
-  default: "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/",
-},
 ```
-
-### 2. 修改 `loadDocument` 函数（ai/mcp/src/tools/swagger/index.ts:109-124）
-
-增强了默认值处理逻辑：
-```typescript
-// 使用默认 URL 如果 source 未提供或为空
-const defaultSource = "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/";
-let source: string | undefined;
-
-if (args.source !== undefined && args.source !== null && args.source.trim() !== "") {
-  source = normalizeSource(args.source);
-} else {
-  source = defaultSource;
-}
-
-if (!source || source.trim() === "") {
-  throw new Error("get_swagger_mcp: 需要提供 source 或 document");
-}
+src/server/base/swagger/
+├── index.ts          # 入口：handleSwaggerGetModelTool（MCP 工具处理函数）
+├── schema.ts         # 输入参数 JSON Schema
+├── types.ts          # 类型定义
+├── analys/           # 文档分析层
+│   ├── index.ts      # 统一导出
+│   ├── document.ts   # 主入口：loadDocument
+│   ├── cache.ts      # 内存+磁盘缓存
+│   ├── url-parser.ts # URL fragment 解析 + 拉取
+│   ├── remote-loader.ts  # 多优先级远程加载
+│   └── html-parser.ts    # 从 HTML 提取 Swagger JSON
+├── utils/            # 工具函数层
+│   ├── index.ts      # 统一导出
+│   ├── operation.ts  # 操作查找 + I/O 提取
+│   └── schema.ts     # $ref 递归解析
+└── README.md
 ```
-
-### 3. 修改 `handleSwaggerGetModelTool` 函数（ai/mcp/src/tools/swagger/index.ts:443-452）
-
-添加了额外的默认值设置以确保健壮性：
-```typescript
-// 确保 args 有默认的 source 值
-if (!args.source || args.source.trim() === "") {
-  args.source = "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/";
-}
-```
-
-## 测试结果
-
-### 成功测试
-1. **提供明确的 source 参数**：工具正常工作，成功从指定 URL 获取了 1000+ 个模型定义
-2. **工具功能完整性**：TypeScript 编译无错误，工具核心功能正常
-
-### 已知问题
-- 当完全不提供任何参数调用工具时，MCP SDK 可能不会自动应用 schema 中的默认值
-- 需要传递空字符串 `""` 作为 `source` 参数才能触发默认值逻辑
-
-## 使用方式
-
-### 方式一：使用默认 URL（推荐）
-```json
-{
-  "resolveRefs": false
-}
-```
-或传递空字符串作为 source：
-```json
-{
-  "source": "",
-  "resolveRefs": false
-}
-```
-
-### 方式二：使用自定义 URL
-```json
-{
-  "source": "https://custom-swagger-url.com/api-docs",
-  "resolveRefs": true
-}
-```
-
-### 方式三：获取特定模型
-```json
-{
-  "name": "YqaExpertResp对象",
-  "resolveRefs": true
-}
-```
-
-## 技术细节
-
-### 默认值处理策略
-1. **Schema 级别**：在 OpenAPI schema 中定义默认值，供客户端参考
-2. **运行时级别**：在 `loadDocument` 函数中实现回退逻辑
-3. **双重保障**：在 `handleSwaggerGetModelTool` 中再次设置默认值
-
-### 健壮性考虑
-- 处理 `undefined`、`null` 和空字符串情况
-- 使用 `trim()` 去除空白字符
-- 多层验证确保不会因空值而崩溃
-
-## 后续优化建议
-
-1. **MCP SDK 集成**：研究 MCP SDK 是否支持自动应用 schema 默认值
-2. **错误信息改进**：当使用默认 URL 时，在错误信息中提示使用的是默认值
-3. **配置化**：将默认 URL 提取为配置常量，便于维护
-4. **日志记录**：添加调试日志以跟踪默认值的使用情况
-
-## 文件清单
-
-修改的文件：
-- `ai/mcp/src/tools/swagger/index.ts`
-
-相关文件：
-- `ai/mcp/src/tools/index.ts`（工具注册）
-- `ai/mcp/src/index.ts`（MCP 服务器入口）
 
 ---
 
-## Analys 模块架构
-
-### 概述
-
-`analys` 模块是 Swagger 文档解析的核心引擎，采用模块化设计，将不同的解析策略分离到独立文件中，提高代码的可维护性和可扩展性。
-
-### 文件结构
+## Swagger 解析流程
 
 ```
-src/server/base/swagger/analys/
-├── index.ts              # 统一导出入口
-├── document.ts           # 主入口：loadDocument 和 getSchemasRoot
-├── cache.ts              # 缓存管理：内存缓存、磁盘缓存、验证
-├── url-parser.ts         # URL 解析：fragment 提取、候选 URL 构造、fetch JSON
-├── html-parser.ts        # HTML 解析：从 HTML 页面提取 Swagger 数据
-└── remote-loader.ts      # 远程加载：多级优先级策略加载远程文档
+handleSwaggerGetModelTool (swagger/index.ts)
+         │
+    ┌────┴────┐
+    │ fragment │ 自动提取 operationId
+    │ 解析     │ source#/分组/标签/操作ID → args.name
+    └────┬────┘
+         │
+         ▼
+    loadDocument(args) (analys/document.ts)
+         │
+    ┌────┼──────────────────────────────────┐
+    │    │ ① 传入 document 对象？           │ → 直接返回
+    │    │ ② 解析 URL fragment              │
+    │    │ ③ 查内存缓存 (10min TTL)         │ → 命中返回
+    │    │ ④ 查磁盘缓存 (1h TTL)            │ → 命中返回
+    │    │ ⑤ 远程加载 / 本地 JSON 文件      │
+    └────┼──────────────────────────────────┘
+         │
+         ▼
+    loadRemoteDocument(source, group, opId) (analys/remote-loader.ts)
+         │
+    ┌────┴────────────────────────────────────────────────────┐
+    │                                                          │
+    │ 不是 doc.html URL？ → 直接 tryFetchJson，无效则报错      │
+    │                                                          │
+    │ ★ 优先级1: HTML 页面解析                                 │
+    │   (已在 fragmentOperation 前提下执行)                     │
+    │   loadAndParseHtmlPage → extractSwaggerFromHtml          │
+    │   ┌─────────────────────────────────────────────┐        │
+    │   │ 策略1: window.swaggerResources (Knife4j)    │        │
+    │   │ 策略2: window.config → 提取 URL             │        │
+    │   │ 策略3: 内联 URL 配置 (url/swaggerUrl 等)    │        │
+    │   │ 策略4: <script> 标签提取完整 JSON            │        │
+    │   └─────────────────────────────────────────────┘        │
+    │                                                          │
+    │ ★ 优先级2: 已知分组，直接拉取                            │
+    │   v3/v2/api-docs?group=xxx (并行4条URL)                  │
+    │                                                          │
+    │ ★ 优先级3: swagger-resources 发现                        │
+    │   → 解析资源列表 → 匹配分组 → 拉取目标 JSON              │
+    │                                                          │
+    │ ★ 优先级4: 并行探测候选 URL (3s 短超时)                  │
+    │   v3/api-docs / v2/api-docs / swagger-resources          │
+    │   → 有效规范直接返回 / swagger-resources 二次解析         │
+    │                                                          │
+    └──────────────────────────────────────────────────────────┘
+         │
+         ▼
+    handleSwaggerGetModelTool (返回结果)
+         │
+    ┌────┴──────────────────────┐
+    │ ① !args.name → 模型名列表 │
+    │ ② 查找模型                 │
+    │    → 未命中？查找操作       │
+    │    → 命中？返回解析后的模型  │
+    └───────────────────────────┘
 ```
 
-### 模块职责
+---
 
-#### 1. cache.ts - 缓存管理
-- **内存缓存**：10 分钟 TTL，避免同一会话内重复拉取
-- **磁盘缓存**：1 小时 TTL，跨会话复用
-- **文档验证**：`isValidSpec()` 验证 Swagger/OpenAPI 规范
-- **缓存操作**：get/set/clear/hashKey
+## 入口层：handleSwaggerGetModelTool
 
-#### 2. url-parser.ts - URL 解析
-- **parseFragment()**：从 URL fragment 提取分组名和操作 ID
-  - 支持格式：`#/{group}/{tag}/{operationId}`
-  - 示例：`#/任务管理/城市管理-检查任务接口/pageUsingPOST_11`
-- **buildCandidateUrls()**：构造候选探测 URL
-  - v3/api-docs
-  - v2/api-docs
-  - swagger-resources
-- **tryFetchJson()**：从 URL 获取 JSON 数据，支持超时和智能解析
+**文件：** [swagger/index.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/index.ts)
 
-#### 3. html-parser.ts - HTML 解析
-- **extractSwaggerFromHtml()**：从 HTML 提取 Swagger 数据（4 种策略）
-  - 策略 1：`window.swaggerResources`（Knife4j 最常见）
-  - 策略 2：`window.config` 配置对象
-  - 策略 3：JavaScript 代码中的 URL 配置
-  - 策略 4：`<script>` 标签中的完整 JSON
-- **loadAndParseHtmlPage()**：加载并解析 HTML 页面（优先级最高）
-  - 获取 HTML 内容
-  - 尝试提取 Swagger JSON
-  - 失败时自动降级到直接 API 调用
+### 职责
 
-#### 4. remote-loader.ts - 远程加载
-- **loadRemoteDocument()**：多级优先级策略
-  - 优先级 1：HTML 页面解析
-  - 优先级 2：直接 API docs URL（v3/v2/api-docs?group=xxx）
-  - 优先级 3：swagger-resources 查询
-  - 优先级 4：并行探测候选 URL
+MCP 工具 `get_swagger_mcp` 的处理函数，接收参数 -> 加载文档 -> 按 name 返回结果。
 
-#### 5. document.ts - 主入口
-- **loadDocument()**：整合所有模块的文档加载入口
-  - 支持 HTTP URL 和本地文件路径
-  - 自动应用缓存策略
-  - 调用 remote-loader 进行远程加载
-- **getSchemasRoot()**：提取 schema 定义根节点
-  - 支持 OpenAPI 3.x（components.schemas）
-  - 支持 Swagger 2.0（definitions）
+### 处理流程
 
-#### 6. index.ts - 统一导出
-- 导出所有公共 API
-- 方便其他模块引用
+```
+handleSwaggerGetModelTool(request)
+    │
+    ├─ ① 自动提取 fragment 中的 operationId
+    │    未提供 name，且 source 含 # → 取 fragment 末段作为 name
+    │
+    ├─ ② loadDocument(args) 加载文档
+    │
+    └─ ③ 按 name 分发：
+          ├─ !name → 返回所有模型名列表
+          ├─ 模型名命中 → 返回模型 schema（可选解析 $ref）
+          └─ 模型未命中 → 查找操作（模糊匹配）
+                └─ 命中 → 返回操作 I/O（请求参数 + 响应参数）
+```
+
+### 参数说明
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `source` | string | Swagger JSON URL 或 doc.html URL（默认：`https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/`） |
+| `document` | object | 直接传入文档对象（优先于 source） |
+| `name` | string | 模型名或操作ID，不传则返回所有模型名 |
+| `resolveRefs` | boolean | 是否解析 $ref（默认 true） |
+| `maxDepth` | number | 解析递归深度（默认 15） |
+
+---
+
+## analys 文档分析层
+
+### document.ts - 加载入口
+
+**文件：** [analys/document.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/document.ts)
+
+整合所有子模块的文档加载入口：
+
+```
+loadDocument(args)
+    │
+    ├─ 传入 document 对象？ → 直接返回
+    ├─ 解析 URL fragment（分组/标签/操作ID）
+    ├─ 查内存缓存 → 命中返回
+    ├─ 查磁盘缓存 → 命中返回并回填内存
+    ├─ 远程 URL → loadRemoteDocument()
+    └─ 本地文件 → 读取 JSON → 写入缓存
+```
+
+**getSchemasRoot(doc)**：提取模型定义根节点
+- OpenAPI 3.x：`doc.components.schemas`
+- Swagger 2.0：`doc.definitions`
+
+---
+
+### remote-loader.ts - 远程加载
+
+**文件：** [analys/remote-loader.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/remote-loader.ts)
+
+四优先级远程文档加载，逐步降级：
+
+| 优先级 | 条件 | 策略 | 超时 |
+|---|---|---|---|
+| 1 | 有 fragmentOperation | HTML 页面解析 | 15s |
+| 2 | 有 fragmentGroup | 直接拉取 `v3/v2/api-docs?group=xxx`（4条并行） | 15s |
+| 3 | - | `swagger-resources` → 匹配分组 → 拉取目标 JSON | 10s |
+| 4 | - | 候选 URL 并行探测：`v3/api-docs` / `v2/api-docs` / `swagger-resources` | 3s |
+
+非 doc.html 的 URL 直接作为 JSON 尝试拉取。
+
+---
+
+### html-parser.ts - HTML 提取
+
+**文件：** [analys/html-parser.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/html-parser.ts)
+
+从 Knife4j / Swagger UI 的 HTML 页面中提取 Swagger JSON。
+
+**extractSwaggerFromHtml()** 四种提取策略：
+
+| 策略 | 来源 | 适用场景 |
+|---|---|---|
+| 1 | `window.swaggerResources` | Knife4j 最常见 |
+| 2 | `window.config` → 提取 url | 配置对象中的 JSON 地址 |
+| 3 | 内联 URL 配置（url/swaggerUrl/apiDocsUrl） | JS 代码中的硬编码 URL |
+| 4 | `<script>` 标签中的完整 JSON | 页面内嵌完整 Swagger 文档 |
+
+---
+
+### url-parser.ts - URL 解析
+
+**文件：** [analys/url-parser.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/url-parser.ts)
+
+**parseFragment(source)**：解析 Knife4j URL fragment
+
+```
+#/任务管理/城市管理-检查任务接口/pageUsingPOST_11
+  ↑  group     ↑ tag               ↑ operationId
+
+#/任务管理/pageUsingPOST_11
+  ↑  group     ↑ operationId
+
+#/listAllUsers
+  ↑ operationId
+```
+
+**buildCandidateUrls(source)**：为 doc.html URL 构造候选探测地址
+
+```
+v3/api-docs          ← 首位（Knife4j 响应最快）
+v2/api-docs
+swagger-resources
+```
+
+**tryFetchJson(url, timeoutMs)**：HTTP 拉取 JSON
+- 支持超时控制
+- 非 JSON Content-Type 时尝试从文本中提取 JSON 对象
+
+---
+
+### cache.ts - 缓存管理
+
+**文件：** [analys/cache.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/cache.ts)
+
+| 缓存层 | 位置 | TTL | 用途 |
+|---|---|---|---|
+| 内存 | Map | 10min | 同一会话内避免重复拉取 |
+| 磁盘 | `os.tmpdir()/lm-mcp-swagger-cache/` | 1h | 跨会话复用，IDE MCP 超时重试 |
+
+**缓存键**：`${baseUrl}#group=${fragmentGroup}`（剔除 fragment 路径，同站点同分组仅拉取一次）
+
+---
+
+## utils 工具函数层
+
+### operation.ts - 操作查找与提取
+
+**文件：** [utils/operation.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/utils/operation.ts)
+
+**findOperationByKeyword(doc, keyword)**：全文档模糊匹配操作
+- 扫描所有 path + method，对 summary / description / operationId / tags / path 打分
+- 返回匹配度最高的操作
+
+**extractOperationIO(doc, found)**：提取操作的输入输出
+- **OpenAPI 3.x**：`requestBody.content` → parameters + body schema；`responses[200/201].content` → response schema
+- **Swagger 2.0**：`parameters` 中过滤 body → 区分 path/query 参数和 body schema
+
+### schema.ts - $ref 递归解析
+
+**文件：** [utils/schema.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/utils/schema.ts)
+
+**resolveSchemaNode(options)**：递归展开 $ref 引用
+- 循环引用检测（`seenRefs` Set）
+- 支持组合类型：`allOf` / `oneOf` / `anyOf`
+- 递归解析 `properties` / `items` / `additionalProperties`
+- 深度限制避免栈溢出
 
 ---
 
 ## 解析优先级策略
 
-### 执行流程
-
 ```
 输入: doc.html URL
-    ↓
-【优先级 1】尝试直接解析 HTML 页面
+    │
+    ▼
+【优先级 1】HTML 页面解析
     ├─ 获取 HTML 内容
-    ├─ 从 HTML 中提取 Swagger JSON URL
-    │   ├─ 策略 1: window.swaggerResources
-    │   ├─ 策略 2: window.config  
-    │   ├─ 策略 3: JavaScript 中的 URL 配置
-    │   └─ 策略 4: <script> 标签中的 JSON
-    └─ 如果提取失败，构造 Swagger JSON URL 直接获取
-    ↓
-【优先级 2】快路径 1：直接尝试 v3/v2 api-docs?group=xxx
-    ↓
-【优先级 3】快路径 2：swagger-resources 查询
-    ↓
-【优先级 4】并行探测其他候选 URL
+    ├─ 策略1: window.swaggerResources
+    ├─ 策略2: window.config
+    ├─ 策略3: JS URL 配置
+    └─ 策略4: <script> 标签完整 JSON
+    │
+    ▼
+【优先级 2】直拉 v3/v2 api-docs?group=xxx
+    │
+    ▼
+【优先级 3】swagger-resources 查询 → 匹配分组 → 拉取
+    │
+    ▼
+【优先级 4】并行探测候选 URL（v3/v2/swagger-resources，3s 短超时）
 ```
-
-### 策略说明
-
-1. **HTML 解析（优先级最高）**
-   - 直接从 doc.html 页面提取数据
-   - 适用于 knife4j 等现代 Swagger UI
-   - 支持多种提取策略
-
-2. **直接 API URL**
-   - 根据 fragment 中的分组名构造 URL
-   - 例如：`/v3/api-docs?group=任务管理`
-   - 快速且可靠
-
-3. **swagger-resources**
-   - 查询分组列表
-   - 自动匹配目标分组
-   - 信息量最大
-
-4. **并行探测**
-   - 同时尝试多个候选 URL
-   - 使用短超时（3 秒）
-   - 作为最后的降级策略
 
 ---
 
@@ -249,58 +301,53 @@ src/server/base/swagger/analys/
 
 ### MCP 工具调用
 
-#### 方式一：使用默认 URL（推荐）
+#### 获取所有模型名
 ```json
 {
-  "resolveRefs": false
-}
-```
-或传递空字符串作为 source：
-```json
-{
-  "source": "",
-  "resolveRefs": false
+  "source": "https://api-test.17an.com/dsb/yqarw/api/doc.html#/"
 }
 ```
 
-#### 方式二：使用 doc.html URL
+#### 获取单个模型
 ```json
 {
-  "source": "https://api-test.17an.com/dsb/yqarw/api/doc.html#/任务管理/一起安-同步任务-三方信息表dx接口/getByIdUsingGET_3",
-  "name": "getByIdUsingGET_3"
-}
-```
-
-#### 方式三：使用自定义 JSON URL
-```json
-{
-  "source": "https://custom-swagger-url.com/v3/api-docs?group=任务管理",
-  "resolveRefs": true
-}
-```
-
-#### 方式四：获取特定模型
-```json
-{
+  "source": "https://api-test.17an.com/dsb/yqarw/api/doc.html#/任务管理",
   "name": "YqaExpertResp对象",
   "resolveRefs": true
 }
 ```
 
-### 代码示例
+#### 通过 fragment 自动提取操作（无需传 name）
+```json
+{
+  "source": "https://api-test.17an.com/dsb/yqarw/api/doc.html#/任务管理/一起安-同步任务-三方信息表dx接口/getByIdUsingGET_3"
+}
+```
+
+#### 使用直链 JSON URL
+```json
+{
+  "source": "https://api-test.17an.com/dsb/yqarw/v3/api-docs?group=任务管理",
+  "name": "pageUsingPOST",
+  "maxDepth": 10
+}
+```
+
+### 代码调用
 
 ```typescript
-import { loadDocument } from "@/server/base/swagger/analys/index.js";
+import { loadDocument, getSchemasRoot } from "@/server/base/swagger/analys/index.js";
+import { findOperationByKeyword, extractOperationIO } from "@/server/base/swagger/utils/operation.js";
 
 // 加载文档
 const doc = await loadDocument({
   source: "https://api-test.17an.com/dsb/yqarw/api/doc.html#/任务管理/接口名称/operationId"
 });
 
-// 获取 schemas
+// 获取所有模型
 const schemas = getSchemasRoot(doc);
 
-// 查找接口
+// 查找操作
 const operation = findOperationByKeyword(doc, "operationId");
 
 // 提取接口信息
@@ -309,44 +356,18 @@ const io = extractOperationIO(doc, operation);
 
 ---
 
-## 技术细节
+## 缓存策略
 
-### 缓存策略
+```
+请求 → 缓存键: url#group=分组名
+    │
+    ├─ 内存缓存 (10min TTL) → 命中直接返回
+    │
+    └─ 磁盘缓存 (1h TTL, 系统临时目录)
+         └─ 命中 → 回填内存 → 返回
+              └─ 未命中 → 远程加载 → 写入内存+磁盘
+```
 
-1. **内存缓存**
-   - TTL: 10 分钟
-   - 适用于同一会话内的重复请求
-   - 自动清理过期缓存
-
-2. **磁盘缓存**
-   - TTL: 1 小时
-   - 位置：`os.tmpdir()/lm-mcp-swagger-cache`
-   - 跨会话复用，避免 IDE MCP 超时重试
-
-3. **缓存键**
-   - 格式：`${baseUrl}#group=${fragmentGroup}`
-   - 剔除 fragment，同站点同分组仅拉取一次
-
-### 默认值处理策略
-
-1. **Schema 级别**：在 OpenAPI schema 中定义默认值，供客户端参考
-2. **运行时级别**：在 `loadDocument` 函数中实现回退逻辑
-3. **双重保障**：在 `handleSwaggerGetModelTool` 中再次设置默认值
-
-### 健壮性考虑
-
-- 处理 `undefined`、`null` 和空字符串情况
-- 使用 `trim()` 去除空白字符
-- 多层验证确保不会因空值而崩溃
-- 超时控制避免无限等待
-
----
-
-## 后续优化建议
-
-1. **MCP SDK 集成**：研究 MCP SDK 是否支持自动应用 schema 默认值
-2. **错误信息改进**：当使用默认 URL 时，在错误信息中提示使用的是默认值
-3. **配置化**：将默认 URL 提取为配置常量，便于维护
-4. **日志记录**：添加调试日志以跟踪默认值的使用情况
-5. **性能监控**：添加性能指标统计，优化加载策略
-6. **错误重试**：实现智能重试机制，提高成功率
+- 同站点同分组仅拉取一次，后续请求走缓存
+- 磁盘缓存路径：`os.tmpdir()/lm-mcp-swagger-cache/{sha1}.json`
+- 写磁盘不阻塞返回（fire-and-forget）
