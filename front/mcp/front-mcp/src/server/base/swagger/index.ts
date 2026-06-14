@@ -4,15 +4,19 @@ import type { SwaggerGetModelArgs } from "@/server/base/swagger/types.js";
 import {
   loadDocument,
   getSchemasRoot,
-  resolveSchemaNode,
+} from "@/server/base/swagger/analys/index.js";
+import { resolveSchemaNode } from "@/server/base/swagger/utils/schema.js";
+import {
   findOperationByKeyword,
   extractOperationIO,
-} from "@/server/base/swagger/utils/index.js";
+} from "@/server/base/swagger/utils/operation.js";
 import { swaggerGetModelInputSchema } from "@/server/base/swagger/schema.js";
+import { server } from "@/index.js";
 
 export const swaggerGetModelTool = {
   name: "get_swagger_mcp",
-  description: "读取 Swagger/OpenAPI 文档，列出模型或返回指定模型的数据结构（支持解析 $ref）",
+  description:
+    "读取 Swagger/OpenAPI 文档，列出模型或返回指定模型的数据结构（支持解析 $ref）",
   inputSchema: swaggerGetModelInputSchema,
 } as const;
 
@@ -24,10 +28,15 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
   // 则从 fragment 的最后一段提取操作标识（解码）并赋值给 args.name，便于定位该接口。
   try {
     const rawSource = request.params.arguments?.source;
-    if (!args.name && typeof rawSource === "string" && rawSource.includes("#")) {
+    if (
+      !args.name &&
+      typeof rawSource === "string" &&
+      rawSource.includes("#")
+    ) {
       const frag = rawSource.split("#")[1] ?? "";
       const parts = frag.split("/").filter(Boolean);
-      const last = parts.length > 0 ? decodeURIComponent(parts[parts.length - 1]) : "";
+      const last =
+        parts.length > 0 ? decodeURIComponent(parts[parts.length - 1]) : "";
       if (last) {
         args.name = last;
         // console.error(`[MCP Swagger Debug] extracted name from fragment: ${args.name}`);
@@ -43,16 +52,34 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
   // console.error(`[MCP Swagger Debug] final args.source = ${JSON.stringify(args.source)}`);
 
   const doc = await loadDocument(args); // 加载 Swagger/OpenAPI 文档
-  console.error(`[MCP Swagger Debug] document loaded successfully`, doc);
   const schemas = getSchemasRoot(doc as any); // 提取模型定义根节点
-  // console.error(`DEBUG handleSwaggerGetModelTool: schemas = ${JSON.stringify(schemas)}`);
   const names = Object.keys(schemas).sort((a, b) => a.localeCompare(b));
 
+  // 发送日志通知到 Inspector
+  await server.sendLoggingMessage({
+    level: "info",
+    logger: "swagger-tool",
+    data: {
+      message: "Document loaded successfully",
+      totalModels: names.length,
+      firstModels: names.slice(0, 3),
+    },
+  });
+
   const resolveRefs = args.resolveRefs ?? true;
-  const maxDepth = Number.isFinite(args.maxDepth) ? Math.max(0, Math.floor(args.maxDepth!)) : 15;
+  const maxDepth = Number.isFinite(args.maxDepth)
+    ? Math.max(0, Math.floor(args.maxDepth!))
+    : 15;
 
   if (!args.name) {
-    return textResponseFromJson({ models: names });
+    return textResponseFromJson({
+      _debug: {
+        message: "document loaded successfully",
+        totalModels: names.length,
+        schemas: schemas, // 显示完整的 schemas 对象
+      },
+      models: names,
+    });
   }
 
   const rawModel = (schemas as any)[args.name];
@@ -67,26 +94,46 @@ export async function handleSwaggerGetModelTool(request: CallToolRequest) {
         operation: io.operation,
         request: {
           ...io.request,
-          body: resolveRefs && io.request.body
-            ? resolveSchemaNode({ doc, node: io.request.body, depth: maxDepth, seenRefs: new Set() })
-            : io.request.body,
+          body:
+            resolveRefs && io.request.body
+              ? resolveSchemaNode({
+                  doc,
+                  node: io.request.body,
+                  depth: maxDepth,
+                  seenRefs: new Set(),
+                })
+              : io.request.body,
         },
         response: {
           ...io.response,
-          body: resolveRefs && io.response.body
-            ? resolveSchemaNode({ doc, node: io.response.body, depth: maxDepth, seenRefs: new Set() })
-            : io.response.body,
+          body:
+            resolveRefs && io.response.body
+              ? resolveSchemaNode({
+                  doc,
+                  node: io.response.body,
+                  depth: maxDepth,
+                  seenRefs: new Set(),
+                })
+              : io.response.body,
         },
       };
 
       return textResponseFromJson(operationResult);
     }
 
-    return textResponseFromJson({ error: `未找到模型: ${args.name}`, models: names });
+    return textResponseFromJson({
+      error: `未找到模型: ${args.name}`,
+      models: names,
+    });
   }
 
   const model = resolveRefs
-    ? resolveSchemaNode({ doc, node: rawModel, depth: maxDepth, seenRefs: new Set() })
+    ? resolveSchemaNode({
+        doc,
+        node: rawModel,
+        depth: maxDepth,
+        seenRefs: new Set(),
+      })
     : rawModel;
 
   return textResponseFromJson({ name: args.name, schema: model });

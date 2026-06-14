@@ -7,7 +7,7 @@
  */
 
 import { parseFragment, buildCandidateUrls, tryFetchJson } from "../dist/server/base/swagger/analys/url-parser.js";
-import { loadDocument, getSchemasRoot } from "../dist/server/base/swagger/analys/document.js";
+import { loadDocument, getSchemasRoot } from "../dist/server/base/swagger/analys/loader.js";
 import { handleSwaggerGetModelTool } from "../dist/server/base/swagger/index.js";
 import { findOperationByKeyword, extractOperationIO } from "../dist/server/base/swagger/utils/operation.js";
 import { resolveSchemaNode } from "../dist/server/base/swagger/utils/schema.js";

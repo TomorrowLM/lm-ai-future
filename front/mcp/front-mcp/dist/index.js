@@ -4,12 +4,13 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError, } from "@modelcontextprotocol/sdk/types.js";
 import { tools, dispatchTool } from "./server/index.js";
 // 创建 MCP 服务器实例
-const server = new Server({
+export const server = new Server({
     name: "lm-mcp-server",
     version: "1.0.0",
 }, {
     capabilities: {
         tools: {},
+        logging: {}, // 启用日志能力
     },
 });
 // 注册工具列表
@@ -37,6 +38,11 @@ process.on('SIGINT', async () => {
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("LM MCP Server v2.0 (parallel-probe+cache) 已通过 stdio 启动...");
+    // 发送启动通知到 Inspector
+    await server.sendLoggingMessage({
+        level: "info",
+        logger: "lm-mcp-server",
+        data: "LM MCP Server v2.0 已通过 stdio 启动",
+    });
 }
 main().catch(console.error);

@@ -6,8 +6,7 @@
 - [Swagger 解析流程](#swagger-解析流程)
 - [入口层：handleSwaggerGetModelTool](#入口层handleswaggergetmodeltool)
 - [analys 文档分析层](#analys-文档分析层)
-  - [document.ts - 加载入口](#documentts---加载入口)
-  - [remote-loader.ts - 远程加载](#remote-loaderts---远程加载)
+  - [loader.ts - 加载器](#loaderts---加载器)
   - [html-parser.ts - HTML 提取](#html-parserts---html-提取)
   - [url-parser.ts - URL 解析](#url-parserts---url-解析)
   - [cache.ts - 缓存管理](#cachets---缓存管理)
@@ -29,11 +28,10 @@ src/server/base/swagger/
 ├── types.ts          # 类型定义
 ├── analys/           # 文档分析层
 │   ├── index.ts      # 统一导出
-│   ├── document.ts   # 主入口：loadDocument
+│   ├── loader.ts     # 加载器：对象→缓存→远程多策略（合并原 document + remote-loader）
 │   ├── cache.ts      # 内存+磁盘缓存
 │   ├── url-parser.ts # URL fragment 解析 + 拉取
-│   ├── remote-loader.ts  # 多优先级远程加载
-│   └── html-parser.ts    # 从 HTML 提取 Swagger JSON
+│   ├── html-parser.ts    # 从 HTML 提取 Swagger JSON
 ├── utils/            # 工具函数层
 │   ├── index.ts      # 统一导出
 │   ├── operation.ts  # 操作查找 + I/O 提取
@@ -54,18 +52,18 @@ handleSwaggerGetModelTool (swagger/index.ts)
     └────┬────┘
          │
          ▼
-    loadDocument(args) (analys/document.ts)
+    loadDocument(args) (analys/loader.ts)
          │
     ┌────┼──────────────────────────────────┐
     │    │ ① 传入 document 对象？           │ → 直接返回
     │    │ ② 解析 URL fragment              │
     │    │ ③ 查内存缓存 (10min TTL)         │ → 命中返回
     │    │ ④ 查磁盘缓存 (1h TTL)            │ → 命中返回
-    │    │ ⑤ 远程加载 / 本地 JSON 文件      │
+    │    │ ⑤ 远程多优先级加载（inline，不再拆分）      │
     └────┼──────────────────────────────────┘
          │
          ▼
-    loadRemoteDocument(source, group, opId) (analys/remote-loader.ts)
+    loadRemoteDocument (analys/loader.ts inline)
          │
     ┌────┴────────────────────────────────────────────────────┐
     │                                                          │
@@ -145,11 +143,11 @@ handleSwaggerGetModelTool(request)
 
 ## analys 文档分析层
 
-### document.ts - 加载入口
+### loader.ts - 加载器
 
-**文件：** [analys/document.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/document.ts)
+**文件：** [analys/loader.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/loader.ts)
 
-整合所有子模块的文档加载入口：
+整合缓存、URL 解析、HTML 提取、远程加载的统一入口，决策路径：
 
 ```
 loadDocument(args)
@@ -158,21 +156,16 @@ loadDocument(args)
     ├─ 解析 URL fragment（分组/标签/操作ID）
     ├─ 查内存缓存 → 命中返回
     ├─ 查磁盘缓存 → 命中返回并回填内存
-    ├─ 远程 URL → loadRemoteDocument()
-    └─ 本地文件 → 读取 JSON → 写入缓存
+    └─ 远程 URL → 多优先级加载 → 写入缓存
 ```
 
 **getSchemasRoot(doc)**：提取模型定义根节点
 - OpenAPI 3.x：`doc.components.schemas`
 - Swagger 2.0：`doc.definitions`
 
----
+**resolveFromSwaggerResources()**：共享工具函数，解析 swagger-resources 数组并拉取目标 JSON
 
-### remote-loader.ts - 远程加载
-
-**文件：** [analys/remote-loader.ts](file:///Users/zm/lm/lm-ai-future/front/mcp/front-mcp/src/server/base/swagger/analys/remote-loader.ts)
-
-四优先级远程文档加载，逐步降级：
+四优先级远程加载策略：
 
 | 优先级 | 条件 | 策略 | 超时 |
 |---|---|---|---|
