@@ -5,8 +5,7 @@
 
 // 主入口
 // 加载器：对象直接返回 → 缓存 → 远程多优先级策略
-// 同时导出 resolveFromSwaggerResources 供 html-parser 复用
-export { loadDocument, getSchemasRoot, resolveFromSwaggerResources } from "./loader.js";
+export { loadDocument, getSchemasRoot } from "./loader.js";
 
 // 缓存管理
 export {
@@ -19,11 +18,14 @@ export {
   hashKey,
 } from "./cache.js";
 
-// URL 解析
+// URL 解析 + 远程获取策略
 export {
   parseFragment,
   buildCandidateUrls,
   tryFetchJson,
+  fetchDocsByGroup,
+  fetchDocFromSwaggerResources,
+  probeCandidateUrls,
 } from "./url-parser.js";
 
 // HTML 提取

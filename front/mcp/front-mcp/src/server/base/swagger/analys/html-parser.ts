@@ -4,8 +4,7 @@
  */
 
 import { isValidSpec } from "./cache.js";
-import { tryFetchJson } from "./url-parser.js";
-import { resolveFromSwaggerResources } from "./loader.js";
+import { tryFetchJson, fetchDocFromSwaggerResources } from "./url-parser.js";
 import { logSwagger } from "@/server/base/swagger/utils/log.js";
 
 // ── 从 HTML 页面中提取 Swagger JSON 数据（优化版）─────────────────────
@@ -27,7 +26,7 @@ export async function extractSwaggerFromHtml(
       const data = JSON.parse(swaggerResMatch[1]);
       if (Array.isArray(data)) {
         // await logSwagger(`swaggerResources 数组共 ${data.length} 项`, { count: data.length });
-        const resolved = await resolveFromSwaggerResources(data, baseUrl, fragmentGroup, fragmentOperation);
+        const resolved = await fetchDocFromSwaggerResources(baseUrl, fragmentGroup, fragmentOperation);
         if (resolved && isValidSpec(resolved)) {
           // await logSwagger("✓ 从 swaggerResources 成功提取");
           return resolved;

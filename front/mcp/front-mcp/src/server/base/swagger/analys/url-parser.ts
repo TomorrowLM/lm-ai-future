@@ -1,7 +1,9 @@
 /**
  * URL 解析工具
- * 负责解析 Swagger/Knife4j URL，提取 fragment 信息和构造候选 URL
+ * 负责解析 Swagger/Knife4j URL，提取 fragment 信息、构造候选 URL、远程获取文档
  */
+
+import { isValidSpec } from "./cache.js";
 
 // ── 从 URL fragment 中提取分组名/标签/操作标识 ─────────────────────────
 // knife4j 的 doc.html 路径形如：#/{group}/{tag}/{operationId}
@@ -117,4 +119,129 @@ export async function tryFetchJson(url: string, timeoutMs = 20000): Promise<unkn
   } catch (err: any) {
     throw new Error(`get_swagger_mcp: JSON 解析失败 ${url}: ${err?.message ?? String(err)}，响应预览: ${trimmed.slice(0,200)}`);
   }
+}
+
+// ── 远程获取策略 ─────────────────────────────────────────────────────────
+
+/**
+ * 按分组名直接拉取 v3/v2 api-docs?group=xxx
+ * 返回第一个有效的文档，否则返回 undefined
+ */
+export async function fetchDocsByGroup(
+  baseUrl: URL,
+  fragmentGroup: string,
+): Promise<any | undefined> {
+  const groupEncoded = encodeURIComponent(fragmentGroup);
+  const basePath = baseUrl.pathname;
+  const directUrls = [
+    new URL(`${basePath}v3/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
+    new URL(`${basePath}v2/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
+    new URL(`v3/api-docs?group=${groupEncoded}`, baseUrl).toString(),
+    new URL(`v2/api-docs?group=${groupEncoded}`, baseUrl).toString(),
+  ];
+
+  const results = await Promise.allSettled(
+    directUrls.map((url) => tryFetchJson(url, 15000)),
+  );
+
+  for (const r of results) {
+    if (r.status === "fulfilled" && isValidSpec(r.value)) {
+      return r.value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * 从 swagger-resources 发现分组并拉取目标文档
+ * 返回第一个有效的文档，否则返回 undefined
+ */
+export async function fetchDocFromSwaggerResources(
+  baseUrl: URL,
+  fragmentGroup?: string,
+  fragmentOperation?: string,
+): Promise<any | undefined> {
+  const swaggerResourcesUrl = new URL(
+    `${baseUrl.pathname}swagger-resources`,
+    baseUrl.origin,
+  ).toString();
+
+  const resources = await tryFetchJson(swaggerResourcesUrl, 10000);
+  if (!Array.isArray(resources) || resources.length === 0) return undefined;
+
+  const target = findResourceTarget(resources, fragmentGroup, fragmentOperation);
+  if (!target?.url) return undefined;
+
+  const resolvedUrl = new URL(
+    String(target.url).replace(/^\//, ""),
+    baseUrl,
+  ).toString();
+  const doc = await tryFetchJson(resolvedUrl, 18000);
+  return isValidSpec(doc) ? doc : undefined;
+}
+
+/**
+ * 并行探测候选 URL，返回第一个有效的文档
+ */
+export async function probeCandidateUrls(
+  urls: string[],
+  baseUrl: URL,
+  fragmentGroup?: string,
+  fragmentOperation?: string,
+  timeoutMs = 3000,
+): Promise<any | undefined> {
+  const results = await Promise.allSettled(
+    urls.map((url) => tryFetchJson(url, timeoutMs)),
+  );
+
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    const doc = r.value;
+
+    if (isValidSpec(doc)) return doc;
+
+    if (Array.isArray(doc)) {
+      const target = findResourceTarget(doc, fragmentGroup, fragmentOperation);
+      if (!target?.url) continue;
+      const resolvedUrl = new URL(
+        String(target.url).replace(/^\//, ""),
+        baseUrl,
+      ).toString();
+      try {
+        const resolved = await tryFetchJson(resolvedUrl, 18000);
+        if (isValidSpec(resolved)) return resolved;
+      } catch {
+        // continue
+      }
+    }
+  }
+  return undefined;
+}
+
+// ── 内部工具 ─────────────────────────────────────────────────────────────
+
+function findResourceTarget(
+  resources: any[],
+  fragmentGroup?: string,
+  fragmentOperation?: string,
+): any {
+  let match: any;
+  if (fragmentGroup) {
+    const g = fragmentGroup.toLowerCase();
+    match = resources.find((item: any) => {
+      if (!item) return false;
+      const n = String(item.name ?? item.title ?? "").toLowerCase();
+      const u = String(item.url ?? "").toLowerCase();
+      return n.includes(g) || u.includes(encodeURIComponent(g)) || u.includes(g);
+    });
+  }
+  if (!match && fragmentOperation) {
+    const op = fragmentOperation.toLowerCase();
+    match = resources.find((item: any) => {
+      const n = String(item.name ?? item.title ?? "").toLowerCase();
+      const u = String(item.url ?? "").toLowerCase();
+      return n.includes(op) || u.includes(encodeURIComponent(op)) || u.includes(op);
+    });
+  }
+  return match ?? resources.find((item: any) => item && typeof item.url === "string");
 }

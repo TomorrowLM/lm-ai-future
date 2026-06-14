@@ -63,6 +63,61 @@ export function findOperationByKeyword(doc, keyword) {
     }
     return best;
 }
+const HTTP_METHODS = new Set([
+    "get", "post", "put", "patch", "delete", "options", "head", "trace",
+]);
+/**
+ * 通过 tag 查找该 tag 下的所有操作
+ */
+export function findOperationsByTag(doc, tag) {
+    const paths = doc?.paths;
+    if (!paths || typeof paths !== "object")
+        return [];
+    const targetTag = String(tag ?? "").trim().toLowerCase();
+    if (!targetTag)
+        return [];
+    const results = [];
+    for (const [pathKey, item] of Object.entries(paths)) {
+        if (!item || typeof item !== "object")
+            continue;
+        for (const [method, operation] of Object.entries(item)) {
+            const m = String(method).toLowerCase();
+            if (!HTTP_METHODS.has(m))
+                continue;
+            const op = operation;
+            const tags = Array.isArray(op?.tags) ? op.tags : [];
+            if (tags.some((t) => String(t).toLowerCase() === targetTag)) {
+                results.push({ path: pathKey, method: m, operation: op, score: 0 });
+            }
+        }
+    }
+    return results;
+}
+/**
+ * 通过 operationId 精确查找操作
+ */
+export function findOperationById(doc, operationId) {
+    const paths = doc?.paths;
+    if (!paths || typeof paths !== "object")
+        return undefined;
+    const targetId = String(operationId ?? "").trim();
+    if (!targetId)
+        return undefined;
+    for (const [pathKey, item] of Object.entries(paths)) {
+        if (!item || typeof item !== "object")
+            continue;
+        for (const [method, operation] of Object.entries(item)) {
+            const m = String(method).toLowerCase();
+            if (!HTTP_METHODS.has(m))
+                continue;
+            const op = operation;
+            if (op?.operationId === targetId) {
+                return { path: pathKey, method: m, operation: op, score: 999 };
+            }
+        }
+    }
+    return undefined;
+}
 /**
  * 从 content 中提取第一个 schema
  */

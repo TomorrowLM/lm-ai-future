@@ -12,45 +12,16 @@ import {
   readDiskCache,
   writeDiskCache,
 } from "./cache.js";
-import { parseFragment, buildCandidateUrls, tryFetchJson } from "./url-parser.js";
+import {
+  parseFragment,
+  buildCandidateUrls,
+  tryFetchJson,
+  fetchDocsByGroup,
+  fetchDocFromSwaggerResources,
+  probeCandidateUrls,
+} from "./url-parser.js";
 import { loadAndParseHtmlPage } from "./html-parser.js";
 import { logSwagger } from "@/server/base/swagger/utils/log.js";
-
-// ── 从 swagger-resources 数组解析最终 JSON URL 并拉取 ─────────────────
-
-export async function resolveFromSwaggerResources(
-  resources: any[],
-  baseUrl: URL,
-  fragmentGroup?: string,
-  fragmentOperation?: string,
-): Promise<any> {
-  let match: any;
-
-  if (fragmentGroup) {
-    const g = fragmentGroup.toLowerCase();
-    match = resources.find((item: any) => {
-      if (!item) return false;
-      const n = String(item.name ?? item.title ?? "").toLowerCase();
-      const u = String(item.url ?? "").toLowerCase();
-      return n.includes(g) || u.includes(encodeURIComponent(g)) || u.includes(g);
-    });
-  }
-
-  if (!match && fragmentOperation) {
-    const op = fragmentOperation.toLowerCase();
-    match = resources.find((item: any) => {
-      const n = String(item.name ?? item.title ?? "").toLowerCase();
-      const u = String(item.url ?? "").toLowerCase();
-      return n.includes(op) || u.includes(encodeURIComponent(op)) || u.includes(op);
-    });
-  }
-
-  const target = match ?? resources.find((item: any) => item && typeof item.url === "string");
-  if (!target?.url) return undefined;
-
-  const resolvedUrl = new URL(String(target.url).replace(/^\//, ""), baseUrl).toString();
-  return await tryFetchJson(resolvedUrl, 18000);
-}
 
 // ── 加载远程 HTTP Swagger 文档（多优先级策略）─────────────────────────
 
@@ -88,69 +59,33 @@ async function loadRemoteDocument(
     await logSwagger("优先级1 失败", { error: String(err) }, "warning");
   }
   await logSwagger("优先级1 失败", undefined, "warning");
-  
+
   // 优先级2：已知分组名，直接拉取 v3/v2 api-docs?group=xxx
   if (fragmentGroup) {
-    const groupEncoded = encodeURIComponent(fragmentGroup);
-    const basePath = baseUrl.pathname;
-    const directUrls = [
-      new URL(`${basePath}v3/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
-      new URL(`${basePath}v2/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
-      new URL(`v3/api-docs?group=${groupEncoded}`, baseUrl).toString(),
-      new URL(`v2/api-docs?group=${groupEncoded}`, baseUrl).toString(),
-    ];
-    await logSwagger("优先级2: 直接尝试 API docs URLs", { urls: directUrls });
-    const directResults = await Promise.allSettled(
-      directUrls.map((url) => tryFetchJson(url, 15000))
-    );
-    for (const r of directResults) {
-      if (r.status === "fulfilled" && isValidSpec(r.value)) {
-        await logSwagger("✓ 优先级2 成功");
-        return r.value;
-      }
+    await logSwagger("优先级2: 按分组拉取", { group: fragmentGroup });
+    const doc = await fetchDocsByGroup(baseUrl, fragmentGroup);
+    if (doc) {
+      await logSwagger("✓ 优先级2 成功");
+      return doc;
     }
   }
 
   // 优先级3: 尝试 swagger-resources 获取分组信息
   try {
-    const swaggerResourcesUrl = new URL(`${baseUrl.pathname}swagger-resources`, baseUrl.origin).toString();
-    await logSwagger("优先级3: 尝试 swagger-resources", { url: swaggerResourcesUrl });
-    const resources = await tryFetchJson(swaggerResourcesUrl, 10000);
-
-    if (Array.isArray(resources) && resources.length > 0) {
-      await logSwagger(`swagger-resources 返回 ${resources.length} 项`, { count: resources.length });
-      const resolved = await resolveFromSwaggerResources(resources, baseUrl, fragmentGroup, fragmentOperation);
-      if (resolved && isValidSpec(resolved)) {
-        await logSwagger("✓ 优先级3 成功");
-        return resolved;
-      }
+    await logSwagger("优先级3: 尝试 swagger-resources");
+    const doc = await fetchDocFromSwaggerResources(baseUrl, fragmentGroup, fragmentOperation);
+    if (doc) {
+      await logSwagger("✓ 优先级3 成功");
+      return doc;
     }
   } catch (err) {
     await logSwagger("优先级3 失败", { error: String(err) }, "warning");
   }
 
   // 优先级4: 并行探测其他候选 URL
-  const PROBE_TIMEOUT = 3000;
-
-  const results = await Promise.allSettled(
-    probeUrls.map((url) => tryFetchJson(url, PROBE_TIMEOUT))
-  );
-
-  for (const r of results) {
-    if (r.status !== "fulfilled") continue;
-    const doc = r.value;
-
-    if (isValidSpec(doc)) return doc;
-
-    if (Array.isArray(doc)) {
-      try {
-        const resolved = await resolveFromSwaggerResources(doc, baseUrl, fragmentGroup, fragmentOperation);
-        if (resolved && isValidSpec(resolved)) return resolved;
-      } catch {
-        // fallthrough
-      }
-    }
-  }
+  await logSwagger("优先级4: 并行探测候选 URL");
+  const doc = await probeCandidateUrls(probeUrls, baseUrl, fragmentGroup, fragmentOperation);
+  if (doc) return doc;
 
   throw new Error(
     `get_swagger_mcp: 无法从该 URL 获取可解析的 Swagger/OpenAPI JSON。` +
@@ -182,7 +117,6 @@ export async function loadDocument(args: SwaggerGetModelArgs): Promise<any> {
   // 查内存缓存：cacheKey 剔除 fragment（同站点同分组 → 仅拉取一次）
   const cacheKey = `${source.split("#")[0]}#group=${fragmentGroup ?? ""}`;
   const cachedDoc = getCachedDocument(cacheKey);
-  // console.log(`[MCP Swagger Debug] cacheKey = ${cacheKey}`,cacheKey);
   if (cachedDoc) {
     return cachedDoc;
   }

@@ -21,7 +21,7 @@ export const swaggerGetModelInputSchema = {
     },
     maxDepth: {
       type: "number",
-      description: "解析深度（默认 6）",
+      description: "解析深度（默认 10）",
     },
   },
 } as const;
