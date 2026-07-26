@@ -6,6 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "pnpm run build && node dist/index.js",
+    "test": "tsx --test test/*.test.ts",
     "inspector": "npx @modelcontextprotocol/inspector --config ./inspector.json",
     "start:watch": "nodemon --watch src --ext ts --exec \"pnpm run build && node dist/index.js\"",
     "build": "tsc && tsc-alias",

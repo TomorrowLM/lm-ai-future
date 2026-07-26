@@ -6,14 +6,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
+import { SWAGGER_CACHE_CONFIG } from "@/server/base/swagger/config/index.js";
 
 // ── 文档缓存（避免同一会话内重复拉取大 JSON）────────────────────────
 const documentCache = new Map<string, { doc: any; timestamp: number }>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 分钟
 
 // 磁盘持久化缓存：跨会话 / 避免 IDE MCP 超时重试反复拉取
-const DISK_CACHE_DIR = path.join(os.tmpdir(), "lm-mcp-swagger-cache");
-const DISK_CACHE_TTL = 60 * 60 * 1000; // 1 小时
+const DISK_CACHE_DIR = path.join(os.tmpdir(), SWAGGER_CACHE_CONFIG.diskDirectoryName);
 
 export function hashKey(key: string): string {
   return crypto.createHash("sha1").update(key).digest("hex");
@@ -23,7 +22,7 @@ export async function readDiskCache(cacheKey: string): Promise<any | undefined> 
   try {
     const file = path.join(DISK_CACHE_DIR, `${hashKey(cacheKey)}.json`);
     const stat = await fs.stat(file);
-    if (Date.now() - stat.mtimeMs > DISK_CACHE_TTL) return undefined;
+    if (Date.now() - stat.mtimeMs > SWAGGER_CACHE_CONFIG.diskTtlMs) return undefined;
     const raw = await fs.readFile(file, "utf-8");
     return JSON.parse(raw);
   } catch {
@@ -58,7 +57,7 @@ export function isValidSpec(doc: any): boolean {
  */
 export function getCachedDocument(cacheKey: string): any | undefined {
   const cached = documentCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  if (cached && Date.now() - cached.timestamp < SWAGGER_CACHE_CONFIG.memoryTtlMs) {
     return cached.doc;
   }
   return undefined;

@@ -5,7 +5,10 @@
 
 import { isValidSpec } from "./cache.js";
 import { tryFetchJson, fetchDocFromSwaggerResources } from "./url-parser.js";
-import { logSwagger } from "@/server/base/swagger/utils/log.js";
+import {
+  SWAGGER_ENDPOINTS,
+  SWAGGER_NETWORK_TIMEOUT_MS,
+} from "@/server/base/swagger/config/index.js";
 
 // ── 从 HTML 页面中提取 Swagger JSON 数据（优化版）─────────────────────
 // 支持多种策略：全局变量、script 标签、内联配置等
@@ -45,7 +48,10 @@ export async function extractSwaggerFromHtml(
       if (data?.url) {
         const resolvedUrl = new URL(data.url, baseUrl).toString();
         // await logSwagger(`从 window.config 提取到 URL`, { url: resolvedUrl });
-        const resolved = await tryFetchJson(resolvedUrl, 18000);
+        const resolved = await tryFetchJson(
+          resolvedUrl,
+          SWAGGER_NETWORK_TIMEOUT_MS.resolvedResource,
+        );
         if (isValidSpec(resolved)) {
           // await logSwagger("✓ 从 window.config 成功提取");
           return resolved;
@@ -70,7 +76,10 @@ export async function extractSwaggerFromHtml(
         const endpoint = urlMatch[1];
         const fullUrl = new URL(endpoint, baseUrl).toString();
         // await logSwagger(`发现 API URL`, { url: fullUrl });
-        const doc = await tryFetchJson(fullUrl, 18000);
+        const doc = await tryFetchJson(
+          fullUrl,
+          SWAGGER_NETWORK_TIMEOUT_MS.resolvedResource,
+        );
         if (isValidSpec(doc)) {
           // await logSwagger("✓ 从 URL 配置成功提取");
           return doc;
@@ -120,7 +129,10 @@ export async function loadAndParseHtmlPage(
   try {
     // 1. 获取 HTML 页面内容
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      SWAGGER_NETWORK_TIMEOUT_MS.htmlPage,
+    );
     
     let response: Response;
     try {
@@ -153,10 +165,16 @@ export async function loadAndParseHtmlPage(
     if (fragmentGroup && fragmentOperation) {
       // await logSwagger("尝试构造 Swagger JSON URL");
       const groupEncoded = encodeURIComponent(fragmentGroup);
-      const swaggerJsonUrl = new URL(`${baseUrl.pathname}v3/api-docs?group=${groupEncoded}`, baseUrl.origin).toString();
+      const swaggerJsonUrl = new URL(
+        `${baseUrl.pathname}${SWAGGER_ENDPOINTS.openApiV3}?group=${groupEncoded}`,
+        baseUrl.origin,
+      ).toString();
       
       try {
-        const doc = await tryFetchJson(swaggerJsonUrl, 15000);
+        const doc = await tryFetchJson(
+          swaggerJsonUrl,
+          SWAGGER_NETWORK_TIMEOUT_MS.groupDocument,
+        );
         if (isValidSpec(doc)) {
           // await logSwagger("✓ 成功获取 Swagger JSON 文档");
           return doc;

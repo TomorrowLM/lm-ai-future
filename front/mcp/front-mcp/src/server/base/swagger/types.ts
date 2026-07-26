@@ -6,9 +6,21 @@ export type SwaggerGetModelArgs = {
   source?: string;
   document?: unknown;
   name?: string;
+  tag?: string;
+  operationId?: string;
+  keyword?: string;
+  offset?: number;
+  limit?: number;
+  refresh?: boolean;
   resolveRefs?: boolean;
   maxDepth?: number;
 };
+
+export interface SwaggerFragment {
+  fragmentGroup?: string;
+  fragmentTag?: string;
+  fragmentOperation?: string;
+}
 
 export interface ResolveSchemaNodeOptions {
   doc: any;

@@ -22,6 +22,10 @@ import {
 } from "./url-parser.js";
 import { loadAndParseHtmlPage } from "./html-parser.js";
 import { logSwagger } from "@/server/base/swagger/utils/log.js";
+import {
+  DEFAULT_SWAGGER_SOURCE,
+  SWAGGER_NETWORK_TIMEOUT_MS,
+} from "@/server/base/swagger/config/index.js";
 
 // ── 加载远程 HTTP Swagger 文档（多优先级策略）─────────────────────────
 
@@ -34,7 +38,7 @@ async function loadRemoteDocument(
 
   if (!candidateInfo) {
     try {
-      const doc = await tryFetchJson(source, 8000);
+      const doc = await tryFetchJson(source, SWAGGER_NETWORK_TIMEOUT_MS.directJson);
       if (isValidSpec(doc)) return doc;
     } catch {
       // fallthrough
@@ -106,7 +110,7 @@ export async function loadDocument(args: SwaggerGetModelArgs): Promise<any> {
 
   const source = args.source !== undefined && args.source !== null && args.source.trim() !== ""
     ? normalizeSource(args.source)
-    : "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/";
+    : DEFAULT_SWAGGER_SOURCE;
 
   if (!source || source.trim() === "") {
     throw new Error("get_swagger_mcp: 需要提供 source 或 document");
@@ -116,17 +120,19 @@ export async function loadDocument(args: SwaggerGetModelArgs): Promise<any> {
 
   // 查内存缓存：cacheKey 剔除 fragment（同站点同分组 → 仅拉取一次）
   const cacheKey = `${source.split("#")[0]}#group=${fragmentGroup ?? ""}`;
-  const cachedDoc = getCachedDocument(cacheKey);
-  if (cachedDoc) {
-    return cachedDoc;
-  }
+  if (!args.refresh) {
+    const cachedDoc = getCachedDocument(cacheKey);
+    if (cachedDoc) {
+      return cachedDoc;
+    }
 
-  // 查磁盘缓存：跨会话复用，特别是 IDE MCP 超时后重试场景
-  if (isHttpUrl(source)) {
-    const diskDoc = await readDiskCache(cacheKey);
-    if (diskDoc && isValidSpec(diskDoc)) {
-      setCachedDocument(cacheKey, diskDoc);
-      return diskDoc;
+    // 查磁盘缓存：跨会话复用，特别是 IDE MCP 超时后重试场景
+    if (isHttpUrl(source)) {
+      const diskDoc = await readDiskCache(cacheKey);
+      if (diskDoc && isValidSpec(diskDoc)) {
+        setCachedDocument(cacheKey, diskDoc);
+        return diskDoc;
+      }
     }
   }
 

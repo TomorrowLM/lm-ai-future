@@ -12,6 +12,15 @@ function getArgValue(flag) {
 async function main() {
   const source = getArgValue("--source") ?? "https://apit-dsb.dingtax.cn/dsb/yqarw/api/doc.html#/";
   const name = getArgValue("--name") ?? "";
+  const tag = getArgValue("--tag");
+  const operationId = getArgValue("--operation-id");
+  const keyword = getArgValue("--keyword");
+  const offset = getArgValue("--offset");
+  const limit = getArgValue("--limit");
+  const refreshIndex = process.argv.indexOf("--refresh");
+  const refresh = refreshIndex === -1
+    ? undefined
+    : process.argv[refreshIndex + 1] !== "false";
   const resolveRefs = getArgValue("--resolve-refs") ?? "true";
   const maxDepth = getArgValue("--max-depth") ?? "6";
 
@@ -38,6 +47,12 @@ async function main() {
   const args = {};
   if (source) args.source = source;
   if (name !== undefined && name !== "") args.name = name;
+  if (tag !== undefined && tag !== "") args.tag = tag;
+  if (operationId !== undefined && operationId !== "") args.operationId = operationId;
+  if (keyword !== undefined && keyword !== "") args.keyword = keyword;
+  if (offset !== undefined) args.offset = parseInt(offset, 10);
+  if (limit !== undefined) args.limit = parseInt(limit, 10);
+  if (refresh !== undefined) args.refresh = refresh;
   if (resolveRefs !== undefined) args.resolveRefs = resolveRefs === "true";
   if (maxDepth !== undefined) args.maxDepth = parseInt(maxDepth, 10);
 

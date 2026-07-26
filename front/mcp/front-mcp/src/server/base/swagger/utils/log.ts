@@ -3,7 +3,7 @@
  * 统一通过 MCP Logging 能力发送日志到 Inspector
  */
 
-import { server } from "@/index.js";
+import { server } from "@/server-instance.js";
 
 /**
  * 发送日志消息到 Inspector 的 Server Notifications

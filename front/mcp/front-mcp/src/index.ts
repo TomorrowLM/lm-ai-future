@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
   CallToolRequestSchema,
@@ -8,20 +7,9 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { tools, dispatchTool } from "@/server/index.js";
+import { server } from "@/server-instance.js";
 
-// 创建 MCP 服务器实例
-export const server = new Server(
-  {
-    name: "lm-mcp-server",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
-      logging: {}, // 启用日志能力
-    },
-  }
-);
+export { server } from "@/server-instance.js";
 
 // 注册工具列表
 server.setRequestHandler(ListToolsRequestSchema, async () => {

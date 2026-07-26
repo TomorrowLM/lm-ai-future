@@ -4,6 +4,12 @@
  */
 
 import { isValidSpec } from "./cache.js";
+import {
+  SWAGGER_CANDIDATE_PATHS,
+  SWAGGER_ENDPOINTS,
+  SWAGGER_NETWORK_TIMEOUT_MS,
+} from "@/server/base/swagger/config/index.js";
+import type { SwaggerFragment } from "@/server/base/swagger/types.js";
 
 // ── 从 URL fragment 中提取分组名/标签/操作标识 ─────────────────────────
 // knife4j 的 doc.html 路径形如：#/{group}/{tag}/{operationId}
@@ -12,11 +18,7 @@ import { isValidSpec } from "./cache.js";
 //      tag    = 城市管理-检查任务接口
 //      opId   = pageUsingPOST_11
 
-export function parseFragment(source: string): {
-  fragmentGroup?: string;
-  fragmentTag?: string;
-  fragmentOperation?: string;
-} {
+export function parseFragment(source: string): SwaggerFragment {
   try {
     if (!source.includes("#")) return {};
     const frag = source.split("#")[1] ?? "";
@@ -25,8 +27,8 @@ export function parseFragment(source: string): {
     });
     if (parts.length === 0) return {};
     if (parts.length === 1) {
-      // 仅一段，无法判断含义，视为操作标识
-      return { fragmentOperation: parts[0] };
+      // 一段为文档分组，不构成查询选择器
+      return { fragmentGroup: parts[0] };
     }
     if (parts.length === 2) {
       // 两段：约定第一段为分组，第二段为操作
@@ -59,11 +61,9 @@ export function buildCandidateUrls(source: string): { baseUrl: URL; urls: string
     baseUrl.search = "";
 
     // swagger-resources 排首位：knife4j 等框架下响应最快、信息量最大
-    const urls: string[] = [
-      new URL("v3/api-docs", baseUrl).toString(),
-      new URL("v2/api-docs", baseUrl).toString(),
-      new URL("swagger-resources", baseUrl).toString(),
-    ];
+    const urls = SWAGGER_CANDIDATE_PATHS.map((candidatePath) =>
+      new URL(candidatePath, baseUrl).toString()
+    );
     return { baseUrl, urls };
   } catch {
     return null;
@@ -73,7 +73,10 @@ export function buildCandidateUrls(source: string): { baseUrl: URL; urls: string
 /**
  * 尝试从 URL 获取 JSON 文档
  */
-export async function tryFetchJson(url: string, timeoutMs = 20000): Promise<unknown> {
+export async function tryFetchJson(
+  url: string,
+  timeoutMs: number = SWAGGER_NETWORK_TIMEOUT_MS.genericJson,
+): Promise<unknown> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
@@ -134,14 +137,14 @@ export async function fetchDocsByGroup(
   const groupEncoded = encodeURIComponent(fragmentGroup);
   const basePath = baseUrl.pathname;
   const directUrls = [
-    new URL(`${basePath}v3/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
-    new URL(`${basePath}v2/api-docs?group=${groupEncoded}`, baseUrl.origin).toString(),
-    new URL(`v3/api-docs?group=${groupEncoded}`, baseUrl).toString(),
-    new URL(`v2/api-docs?group=${groupEncoded}`, baseUrl).toString(),
+    new URL(`${basePath}${SWAGGER_ENDPOINTS.openApiV3}?group=${groupEncoded}`, baseUrl.origin).toString(),
+    new URL(`${basePath}${SWAGGER_ENDPOINTS.swaggerV2}?group=${groupEncoded}`, baseUrl.origin).toString(),
+    new URL(`${SWAGGER_ENDPOINTS.openApiV3}?group=${groupEncoded}`, baseUrl).toString(),
+    new URL(`${SWAGGER_ENDPOINTS.swaggerV2}?group=${groupEncoded}`, baseUrl).toString(),
   ];
 
   const results = await Promise.allSettled(
-    directUrls.map((url) => tryFetchJson(url, 15000)),
+    directUrls.map((url) => tryFetchJson(url, SWAGGER_NETWORK_TIMEOUT_MS.groupDocument)),
   );
 
   for (const r of results) {
@@ -162,11 +165,11 @@ export async function fetchDocFromSwaggerResources(
   fragmentOperation?: string,
 ): Promise<any | undefined> {
   const swaggerResourcesUrl = new URL(
-    `${baseUrl.pathname}swagger-resources`,
+    `${baseUrl.pathname}${SWAGGER_ENDPOINTS.resources}`,
     baseUrl.origin,
   ).toString();
 
-  const resources = await tryFetchJson(swaggerResourcesUrl, 10000);
+  const resources = await tryFetchJson(swaggerResourcesUrl, SWAGGER_NETWORK_TIMEOUT_MS.resources);
   if (!Array.isArray(resources) || resources.length === 0) return undefined;
 
   const target = findResourceTarget(resources, fragmentGroup, fragmentOperation);
@@ -176,7 +179,7 @@ export async function fetchDocFromSwaggerResources(
     String(target.url).replace(/^\//, ""),
     baseUrl,
   ).toString();
-  const doc = await tryFetchJson(resolvedUrl, 18000);
+  const doc = await tryFetchJson(resolvedUrl, SWAGGER_NETWORK_TIMEOUT_MS.resolvedResource);
   return isValidSpec(doc) ? doc : undefined;
 }
 
@@ -188,7 +191,7 @@ export async function probeCandidateUrls(
   baseUrl: URL,
   fragmentGroup?: string,
   fragmentOperation?: string,
-  timeoutMs = 3000,
+  timeoutMs: number = SWAGGER_NETWORK_TIMEOUT_MS.probe,
 ): Promise<any | undefined> {
   const results = await Promise.allSettled(
     urls.map((url) => tryFetchJson(url, timeoutMs)),
@@ -208,7 +211,7 @@ export async function probeCandidateUrls(
         baseUrl,
       ).toString();
       try {
-        const resolved = await tryFetchJson(resolvedUrl, 18000);
+        const resolved = await tryFetchJson(resolvedUrl, SWAGGER_NETWORK_TIMEOUT_MS.resolvedResource);
         if (isValidSpec(resolved)) return resolved;
       } catch {
         // continue
