@@ -1,0 +1,20 @@
+// 自定义网关模型配置
+[
+	{
+		"name": "deepseek-v4-pro",
+		"vendor": "customendpoint",
+		"apiKey": "sk-5F6o79koUjeyVxvz3gNEEr2Bn6XaSuk1RLQgmidNrhJUqEcR",
+		"apiType": "chat-completions",
+		"models": [
+			{
+				"id": "deepseek-v4-pro",
+				"name": "deepseek-v4-pro",
+				"url": "https://ai.17an.com/v1",
+				"toolCalling": true,
+				"vision": true,
+				"maxInputTokens": 128000,
+				"maxOutputTokens": 16000
+			}
+		]
+	}
+]
