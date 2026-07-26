@@ -3,8 +3,8 @@ import requests
 import json
 import os
 
-print(os.getenv('OPENAI_BASE_URL'))
-url = os.getenv('OPENAI_BASE_URL') + "/chat/completions"
+print(os.getenv('https://api.openai.com/v1'))
+url = os.getenv('https://api.openai.com/v1') + "/chat/completions"
 payload = json.dumps({
     "model": "gpt-4",
     "messages": [

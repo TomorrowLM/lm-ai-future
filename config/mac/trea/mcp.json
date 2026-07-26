@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "gitnexus": {
+      "command": "/Users/zm/.nvm/versions/node/v22.22.2/bin/gitnexus",
+      "args": [
+        "mcp"
+      ]
+    },
+    "Framelink MCP for Figma": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--figma-api-key=",
+        "--stdio"
+      ],
+      "type": "stdio"
+    },
+    "Figma AI Bridge": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "figma-developer-mcp",
+        "--stdio"
+      ],
+      "type": "stdio",
+      "env": {
+        "FIGMA_API_KEY": ""
+      }
+    }
+  }
+}

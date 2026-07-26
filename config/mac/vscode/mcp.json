@@ -1,0 +1,73 @@
+{
+	"servers": {
+		"io.github.ChromeDevTools/chrome-devtools-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"--registry",
+				"https://registry.npmjs.org",
+				"chrome-devtools-mcp@0.21.0"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.21.0"
+		},
+		"lm-mcp-server": {
+			"command": "npm",
+			"args": [
+				"run",
+				"start:watch"
+			],
+			"cwd": "/Users/zm/lm/lm-ai-future/front/mcp/front-mcp",
+			"type": "stdio"
+		},
+		"gitnexus": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"gitnexus",
+				"mcp"
+			]
+		},
+		"fetch": {
+			"command": "uvx",
+			"args": [
+				"mcp-server-fetch"
+			],
+			"type": "stdio"
+		},
+		"mind-map": {
+			"command": "npx",
+			"args": [
+				"@lucianaib/mind-map-mcp"
+			],
+			"type": "stdio"
+		},
+		"drawio-mcp": {
+			"command": "npx",
+			"args": [
+				"@drawio/mcp@latest"
+			],
+			"type": "stdio"
+		},
+		"figma": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"figma-developer-mcp",
+				"--stdio"
+			],
+			"env": {
+				"FIGMA_API_KEY": "${input:figma-api-key}"
+			}
+		}
+	},
+	"inputs": [
+		{
+			"type": "promptString",
+			"id": "figma-api-key",
+			"description": "Figma Personal Access Token",
+			"password": true
+		}
+	]
+}
