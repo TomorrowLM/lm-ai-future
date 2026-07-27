@@ -16,6 +16,13 @@ stats.html
 pnpm-lock.yaml
 
 
+# Python
+.venv
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -28,7 +35,5 @@ pnpm-lock.yaml
 *.sln
 *.sw?
 .ai/*
-
-src/pages/routes.tsx
 
 package-lock.json

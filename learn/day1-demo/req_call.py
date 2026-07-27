@@ -1,10 +1,11 @@
-#pip install requests
 import requests
 import json
 import os
+from dotenv import load_dotenv
 
-print(os.getenv('https://api.openai.com/v1'))
-url = os.getenv('https://api.openai.com/v1') + "/chat/completions"
+load_dotenv()
+
+url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1") + "/chat/completions"
 payload = json.dumps({
     "model": "gpt-4",
     "messages": [
