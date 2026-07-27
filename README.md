@@ -11,14 +11,17 @@ AI 学习项目，涵盖 API 调用、SDK 使用、Embedding、Vision、Function
 
 ```bash
 uv sync
+cp .env.example .env
 uv run python learn/day1-demo/req_call.py
 ```
+
+如果 VS Code 仍提示导入错误，请手动选择工作区解释器：`.venv/bin/python`。
 
 ## 目录
 
 | 文件/目录 | 作用 |
 |-----------|------|
-| `.env` | 环境变量配置，存放 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY`，供 Python 代码通过 `python-dotenv` 加载 |
+| `.env.example` | 环境变量模板，复制为 `.env` 后填入 `OPENAI_API_KEY` |
 | `.gitignore` | Git 忽略规则，排除 `node_modules`、`.venv`、`__pycache__`、日志、构建产物等 |
 | `.gitmodules` | Git 子模块配置，将 `front/skills` 目录链接到外部仓库 `lm-skill` |
 | `.python-version` | 指定项目使用的 Python 版本为 3.10（uv/pyenv 自动识别） |
@@ -31,6 +34,17 @@ uv run python learn/day1-demo/req_call.py
 | `config/` | 配置文件（API、编辑器 MCP 等） |
 | `.vscode/` | VS Code 工作区配置（Python 解释器路径） |
 | `.venv/` | 虚拟环境目录（已忽略提交） |
+
+## 环境变量
+
+```bash
+cp .env.example .env
+```
+
+然后在 `.env` 中设置：
+
+- `OPENAI_BASE_URL`：默认 `https://api.openai.com/v1`
+- `OPENAI_API_KEY`：你的 API Key
 
 ```
 learn/
