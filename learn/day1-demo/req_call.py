@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1") + "/chat/completions"
+url = os.getenv("DEEPSEEK_BASE_URL") + "/chat/completions"
 payload = json.dumps({
-    "model": "gpt-4",
+    "model": "deepseek-chat",
     "messages": [
         {"role": "system", "content": "assistant"},
         {"role": "user", "content": "Hello world"}
@@ -17,8 +17,8 @@ headers = {
     'Accept': 'application/json',
     'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + os.getenv('OPENAI_API_KEY'),
-    'Host': 'api.openai.com',
+    'Authorization': 'Bearer ' + os.getenv('DEEPSEEK_API_KEY'),
+    # 'Host': 'api.openai.com',
     'Connection': 'keep-alive'
 }
 

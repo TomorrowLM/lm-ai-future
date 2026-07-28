@@ -7,6 +7,26 @@ AI 学习项目，涵盖 API 调用、SDK 使用、Embedding、Vision、Function
 - Python >= 3.10（uv 管理）
 - 依赖见 `pyproject.toml`
 
+### uv 工作流
+
+```mermaid
+graph LR
+    A[pyproject.toml] -->|声明依赖| B[uv]
+    B -->|下载 Python 3.10| C[~/.local/share/uv/python/]
+    B -->|创建虚拟环境| D[.venv/]
+    D -->|符号链接| C
+    E[.vscode/settings.json] -->|指定解释器| D
+    F[uv run] -->|自动激活| D
+```
+
+| 层 | 说明 |
+|----|------|
+| `uv` | Python 包管理器（替代 pip + venv），负责下载 Python 本体 + 创建 `.venv` + 安装依赖 |
+| `.python-version` | 声明项目需要 Python 3.10，uv 自动识别 |
+| `.venv/bin/python` | 符号链接 → uv 管理的 CPython 3.10 |
+| `uv.lock` | 锁定精确依赖版本 |
+| `.vscode/settings.json` | 告诉 VS Code 使用 `.venv/bin/python` 运行/调试代码 |
+
 ## 快速开始
 
 ```bash
