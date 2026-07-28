@@ -1,11 +1,18 @@
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-# 初始化 OpenAI 服务。
-client = OpenAI()
+load_dotenv()
+
+# 初始化 GLM 服务（兼容 OpenAI SDK）
+client = OpenAI(
+    api_key=os.getenv("GLM_API_KEY"),
+    base_url=os.getenv("GLM_BASE_URL"),
+)
 
 
 # 调用嵌入 API
-def get_embedding(text, model="text-embedding-ada-002"):
+def get_embedding(text, model="embedding-2"):
     response = client.embeddings.create(
         input=text,
         model=model

@@ -1,9 +1,17 @@
+import os
 from openai import OpenAI
-client = OpenAI()
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com",
+)
 
 for i in range(3):
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="deepseek-chat",
         # 对于三个请求中的每一个，使用相同的 seed 参数 42，同时将所有其他参数保持相同，我们便能够生成更一致的结果。
         seed=40, #种子
         temperature=0.7,
