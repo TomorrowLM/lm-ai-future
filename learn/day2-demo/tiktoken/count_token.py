@@ -1,17 +1,23 @@
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 # pip install --upgrade tiktoken
 #tiktoken 用来统计token使用
 import tiktoken
 
-client = OpenAI()
-# 初始化 tiktoken 编码器
-encoder = tiktoken.encoding_for_model("gpt-4")
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com",
+)
+# 初始化 tiktoken 编码器（DeepSeek 兼容 cl100k_base 编码，统计结果为近似值）
+encoder = tiktoken.get_encoding("cl100k_base")
 
 def count_tokens(text):
-    encoder.encode(text)
-    # 将输入的文本text转换为对应的token列表。具体来说，它使用tiktoken库中的编码器将文本进行编码，以便后续处理。
+    # 将输入的文本text转换为对应的token列表。
     tokens = encoder.encode(text)
-    # 统计文本中的 token 数量
+    # 统计文本中的 token 数量（DeepSeek 实际 token 数可能有偏差）
     return len(tokens)
 
 
@@ -39,9 +45,9 @@ def main():
         user_tokens = count_tokens(user_input)
         total_tokens += user_tokens
 
-        # 调用 GPT-4 模型
+        # 调用 DeepSeek 模型
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="deepseek-chat",
             messages=messages,
             max_tokens=150,
             temperature=0.7,
