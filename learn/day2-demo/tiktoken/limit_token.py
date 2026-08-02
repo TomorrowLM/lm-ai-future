@@ -1,10 +1,8 @@
 import os
-from dotenv import load_dotenv
+from learn.config import *
 from openai import OpenAI
 # pip install tiktoken
 import tiktoken
-
-load_dotenv()
 
 client = OpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),

@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from learn.config import *
 
 url = os.getenv('OPENAI_BASE_URL') + "/embeddings"
 

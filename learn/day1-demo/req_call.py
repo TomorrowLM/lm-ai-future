@@ -1,9 +1,7 @@
 import requests
 import json
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from learn.config import *
 
 url = os.getenv("DEEPSEEK_BASE_URL") + "/chat/completions"
 payload = json.dumps({

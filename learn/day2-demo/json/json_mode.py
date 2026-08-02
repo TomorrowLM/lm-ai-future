@@ -1,8 +1,6 @@
 from openai import OpenAI
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from learn.config import *
 
 # 初始化 DeepSeek 服务（兼容 OpenAI SDK）
 client = OpenAI(

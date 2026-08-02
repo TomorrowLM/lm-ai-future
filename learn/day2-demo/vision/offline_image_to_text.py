@@ -2,10 +2,7 @@ import os
 from pathlib import Path
 import base64
 import requests
-from dotenv import load_dotenv
-
-
-load_dotenv()
+from learn.config import *
 
 
 def encode_image(image_path):

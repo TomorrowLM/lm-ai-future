@@ -2,6 +2,7 @@
 import requests
 import json
 import os
+from learn.config import *
 
 url = os.getenv('OPENAI_BASE_URL') + "/chat/completions"
 #print(os.getenv('OPENAI_BASE_URL'))
