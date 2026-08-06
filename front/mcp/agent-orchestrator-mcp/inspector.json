@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "agent-orchestrator": {
+      "command": "node",
+      "args": ["dist/index.js"]
+    }
+  }
+}
