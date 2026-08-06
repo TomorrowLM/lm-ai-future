@@ -7,6 +7,7 @@ import { handleAgentGetTask } from './get-task.js'
 import { handleAgentListTasks } from './list-tasks.js'
 import { handleAgentMarkTaskReviewed } from './mark-task-reviewed.js'
 import { handleAgentOpenTaskChats } from './open-task-chats.js'
+import { handleAgentPollTasks } from './poll-tasks.js'
 import { handleAgentReadTaskResult } from './read-task-result.js'
 import { handleAgentRequestRework } from './request-rework.js'
 import { orchestratorTools } from './schema.js'
@@ -37,6 +38,8 @@ export async function dispatchOrchestratorTool(request: CallToolRequest): Promis
         return await handleAgentOpenTaskChats(args)
       case 'agent_wait_for_tasks':
         return await handleAgentWaitForTasks(args)
+      case 'agent_poll_tasks':
+        return await handleAgentPollTasks(args)
       case 'agent_complete_task':
         return await handleAgentCompleteTask(args)
       case 'agent_read_task_result':

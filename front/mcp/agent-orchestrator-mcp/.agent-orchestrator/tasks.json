@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    {
+      "id": "task-92fe1625-468e-4a25-b599-bd6bd1653a65",
+      "title": "open_task_chats 可见性验证",
+      "prompt": "这是 agent_open_task_chats 可见性验证任务。请只回复/写入：open_task_chats 可见性验证成功。然后调用 agent_complete_task 完成任务。",
+      "workspaceRoot": "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp",
+      "inputFiles": [
+        "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp/README.md"
+      ],
+      "promptFile": "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp/.agent-orchestrator/prompts/task-92fe1625-468e-4a25-b599-bd6bd1653a65.md",
+      "resultFile": "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp/.agent-results/open-task-chats-visible-test.md",
+      "status": "completed",
+      "createdAt": "2026-08-06T02:33:04.964Z",
+      "updatedAt": "2026-08-06T02:33:41.649Z",
+      "startedAt": "2026-08-06T02:33:11.789Z",
+      "completedAt": "2026-08-06T02:33:41.649Z"
+    }
+  ]
+}

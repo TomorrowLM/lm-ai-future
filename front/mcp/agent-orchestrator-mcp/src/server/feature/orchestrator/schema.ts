@@ -95,6 +95,19 @@ export const agentWaitForTasksTool: Tool = {
   },
 }
 
+export const agentPollTasksTool: Tool = {
+  name: 'agent_poll_tasks',
+  description: '非阻塞获取多个任务当前状态。适合主 Agent 在等待过程中定时输出子任务进度。',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      workspaceRoot: { type: 'string', description: '工作区绝对路径' },
+      taskIds: { type: 'array', items: { type: 'string' }, minItems: 1, description: '要轮询的任务 ID 列表' },
+    },
+    required: ['workspaceRoot', 'taskIds'],
+  },
+}
+
 export const agentCompleteTaskTool: Tool = {
   name: 'agent_complete_task',
   description: '写入任务结果并标记为 completed。子聊天窗完成任务时应调用。',
@@ -170,6 +183,7 @@ export const orchestratorTools = [
   agentGetTaskTool,
   agentOpenTaskChatsTool,
   agentWaitForTasksTool,
+  agentPollTasksTool,
   agentCompleteTaskTool,
   agentReadTaskResultTool,
   agentMarkTaskReviewedTool,
