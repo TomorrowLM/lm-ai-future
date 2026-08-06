@@ -4,9 +4,9 @@ import path from 'node:path'
 import { assertSafeWorkspaceRoot, resolveInsideWorkspace } from './path-guard.js'
 import type { CreateTaskInput, TaskRecord, TaskStatus, TaskStoreData } from './types.js'
 
-const storeDirName = '.agent-orchestrator'
+const storeDirName = path.join('docs', '.agent-orchestrator')
 const promptsDirName = 'prompts'
-const resultsDirName = '.agent-results'
+const resultsDirName = 'results'
 
 function normalizeRoot(workspaceRoot: string) {
   const normalized = path.normalize(workspaceRoot)
@@ -23,7 +23,7 @@ export function defaultPromptFile(workspaceRoot: string, taskId: string) {
 }
 
 export function defaultResultFile(workspaceRoot: string, taskId: string) {
-  return path.join(normalizeRoot(workspaceRoot), resultsDirName, `${taskId}.md`)
+  return path.join(normalizeRoot(workspaceRoot), storeDirName, resultsDirName, `${taskId}.md`)
 }
 
 async function readStore(workspaceRoot: string): Promise<TaskStoreData> {

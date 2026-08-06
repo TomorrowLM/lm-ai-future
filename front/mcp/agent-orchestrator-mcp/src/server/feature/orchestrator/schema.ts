@@ -13,7 +13,7 @@ const taskRequestSchema: Tool['inputSchema'] = {
       items: { type: 'string' },
       description: '任务需要读取的文件路径，必须在 workspaceRoot 内',
     },
-    resultFile: { type: 'string', description: '结果文件路径，默认写入 .agent-results/task-id.md' },
+    resultFile: { type: 'string', description: '结果文件路径，默认写入 docs/.agent-orchestrator/results/task-id.md' },
   },
   required: ['title', 'prompt', 'workspaceRoot'],
 }

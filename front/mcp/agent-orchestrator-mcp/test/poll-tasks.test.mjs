@@ -14,6 +14,9 @@ test('pollTasks returns live task status and syncs result file completion', asyn
     workspaceRoot,
   })
 
+  assert.equal(task.promptFile, path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'prompts', `${task.id}.md`))
+  assert.equal(task.resultFile, path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'results', `${task.id}.md`))
+
   await mkdir(path.dirname(task.resultFile), { recursive: true })
   await writeFile(task.resultFile, 'done', 'utf8')
 

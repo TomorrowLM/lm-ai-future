@@ -24,7 +24,7 @@ export async function openTaskChat(task: TaskRecord) {
     '--mode',
     'agent',
     '--reuse-window',
-    // '--maximize',
+    '--maximize',
     '--add-file',
     promptFile,
     `请严格执行任务文件 ${promptFile}。完成后写入结果文件并调用 agent_complete_task。`,
