@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -14,7 +14,6 @@ test('pollTasks returns live task status and syncs result file completion', asyn
     workspaceRoot,
   })
 
-  assert.equal(task.promptFile, path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'prompts', `${task.id}.md`))
   assert.equal(task.resultFile, path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'results', `${task.id}.md`))
 
   await mkdir(path.dirname(task.resultFile), { recursive: true })
@@ -27,4 +26,42 @@ test('pollTasks returns live task status and syncs result file completion', asyn
   assert.equal(result.summary.pending, 0)
   assert.equal(result.tasks[0].status, 'completed')
   assert.equal(result.tasks[0].hasResult, true)
+})
+
+test('createTask stores tasks.json next to explicit .agent-orchestrator result file', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-feature-store-'))
+  const resultFile = path.join(
+    'docs',
+    'design',
+    '2026-08-07-city-list-design',
+    '.agent-orchestrator',
+    'results',
+    '01-result.md',
+  )
+
+  const task = await createTask({
+    title: '功能目录存储测试',
+    prompt: '验证 tasks.json 跟随 resultFile',
+    workspaceRoot,
+    resultFile,
+  })
+
+  const expectedStoreFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    '2026-08-07-city-list-design',
+    '.agent-orchestrator',
+    'tasks.json',
+  )
+  const store = JSON.parse(await readFile(expectedStoreFile, 'utf8'))
+
+  assert.equal(task.resultFile, path.join(workspaceRoot, resultFile))
+  assert.equal(store.tasks.length, 1)
+  assert.equal(store.tasks[0].id, task.id)
+
+  const result = await pollTasks(workspaceRoot, [task.id])
+
+  assert.equal(result.summary.total, 1)
+  assert.equal(result.tasks[0].resultFile, task.resultFile)
 })

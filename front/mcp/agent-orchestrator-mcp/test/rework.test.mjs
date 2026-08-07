@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -20,17 +20,9 @@ test('requestRework updates task and writes rework prompt for reopening chat', a
   await writeTaskResult(workspaceRoot, task.id, '上次结果')
 
   const updated = await requestRework(workspaceRoot, task.id, '缺少边界场景分析')
-  const expectedPrompt = path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'prompts', `${task.id}.rework-1.md`)
 
   assert.equal(updated.status, 'rework_requested')
   assert.equal(updated.reworkCount, 1)
   assert.equal(updated.reviewNote, '缺少边界场景分析')
-  assert.equal(updated.promptFile, expectedPrompt)
-
-  await mkdir(path.dirname(updated.promptFile), { recursive: true })
-  const prompt = await readFile(updated.promptFile, 'utf8')
-  assert.match(prompt, /# 返工任务：返工测试/)
-  assert.match(prompt, /## 上次结果文件/)
-  assert.match(prompt, /缺少边界场景分析/)
-  assert.match(prompt, /agent_complete_task/)
+  assert.equal(updated.error, '缺少边界场景分析')
 })

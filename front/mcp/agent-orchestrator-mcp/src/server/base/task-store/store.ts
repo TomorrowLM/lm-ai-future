@@ -1,11 +1,21 @@
 import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { assertSafeWorkspaceRoot, resolveInsideWorkspace } from './path-guard.js'
 import type { CreateTaskInput, TaskRecord, TaskStatus, TaskStoreData } from './types.js'
 
 const storeDirName = path.join('docs', '.agent-orchestrator')
+const orchestratorDirName = '.agent-orchestrator'
+const tasksFileName = 'tasks.json'
 const resultsDirName = 'results'
+const ignoredDiscoveryDirs = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  'build',
+  '.next',
+  '.turbo',
+])
 
 function normalizeRoot(workspaceRoot: string) {
   const normalized = path.normalize(workspaceRoot)
@@ -14,16 +24,59 @@ function normalizeRoot(workspaceRoot: string) {
 }
 
 export function taskStorePath(workspaceRoot: string) {
-  return path.join(normalizeRoot(workspaceRoot), storeDirName, 'tasks.json')
+  return path.join(normalizeRoot(workspaceRoot), storeDirName, tasksFileName)
 }
 
 export function defaultResultFile(workspaceRoot: string, taskId: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, resultsDirName, `${taskId}.md`)
 }
 
-async function readStore(workspaceRoot: string): Promise<TaskStoreData> {
-  const filePath = taskStorePath(workspaceRoot)
+function taskStorePathForResultFile(workspaceRoot: string, resultFile: string) {
+  const normalizedRoot = normalizeRoot(workspaceRoot)
+  const resolvedResultFile = resolveInsideWorkspace(normalizedRoot, resultFile)
+  const parts = resolvedResultFile.split(path.sep)
+  const orchestratorIndex = parts.lastIndexOf(orchestratorDirName)
 
+  if (orchestratorIndex >= 0 && parts[orchestratorIndex + 1] === resultsDirName) {
+    return path.join(parts.slice(0, orchestratorIndex + 1).join(path.sep), tasksFileName)
+  }
+
+  return taskStorePath(normalizedRoot)
+}
+
+async function discoverTaskStorePaths(workspaceRoot: string) {
+  const normalizedRoot = normalizeRoot(workspaceRoot)
+  const storePaths = new Set<string>([taskStorePath(normalizedRoot)])
+
+  async function walk(directory: string) {
+    let entries
+
+    try {
+      entries = await readdir(directory, { withFileTypes: true })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return
+      throw error
+    }
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || ignoredDiscoveryDirs.has(entry.name)) continue
+
+      const nextDir = path.join(directory, entry.name)
+
+      if (entry.name === orchestratorDirName) {
+        storePaths.add(path.join(nextDir, tasksFileName))
+        continue
+      }
+
+      await walk(nextDir)
+    }
+  }
+
+  await walk(normalizedRoot)
+  return [...storePaths]
+}
+
+async function readStoreFile(filePath: string): Promise<TaskStoreData> {
   try {
     const text = await readFile(filePath, 'utf8')
     const parsed = JSON.parse(text) as TaskStoreData
@@ -36,10 +89,32 @@ async function readStore(workspaceRoot: string): Promise<TaskStoreData> {
   }
 }
 
-async function writeStore(workspaceRoot: string, data: TaskStoreData) {
-  const filePath = taskStorePath(workspaceRoot)
+async function readStore(workspaceRoot: string): Promise<TaskStoreData> {
+  return readStoreFile(taskStorePath(workspaceRoot))
+}
+
+async function writeStoreFile(filePath: string, data: TaskStoreData) {
   await mkdir(path.dirname(filePath), { recursive: true })
   await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
+}
+
+async function writeStore(workspaceRoot: string, data: TaskStoreData) {
+  await writeStoreFile(taskStorePath(workspaceRoot), data)
+}
+
+async function findTaskStore(workspaceRoot: string, taskId: string) {
+  const storePaths = await discoverTaskStorePaths(workspaceRoot)
+
+  for (const storePath of storePaths) {
+    const store = await readStoreFile(storePath)
+    const task = store.tasks.find((item) => item.id === taskId)
+
+    if (task) {
+      return { storePath, store, task }
+    }
+  }
+
+  return undefined
 }
 
 export async function createTask(input: CreateTaskInput) {
@@ -50,6 +125,9 @@ export async function createTask(input: CreateTaskInput) {
   const resultFile = input.resultFile
     ? resolveInsideWorkspace(workspaceRoot, input.resultFile)
     : defaultResultFile(workspaceRoot, id)
+  const storePath = input.resultFile
+    ? taskStorePathForResultFile(workspaceRoot, input.resultFile)
+    : taskStorePath(workspaceRoot)
 
   const task: TaskRecord = {
     id,
@@ -63,9 +141,9 @@ export async function createTask(input: CreateTaskInput) {
     updatedAt: now,
   }
 
-  const store = await readStore(workspaceRoot)
+  const store = await readStoreFile(storePath)
   store.tasks.push(task)
-  await writeStore(workspaceRoot, store)
+  await writeStoreFile(storePath, store)
   return task
 }
 
@@ -80,26 +158,31 @@ export async function createTasks(inputs: CreateTaskInput[]) {
 }
 
 export async function listTasks(workspaceRoot: string, status?: TaskStatus) {
-  const store = await readStore(normalizeRoot(workspaceRoot))
-  return status ? store.tasks.filter((task) => task.status === status) : store.tasks
+  const tasks = []
+
+  for (const storePath of await discoverTaskStorePaths(normalizeRoot(workspaceRoot))) {
+    const store = await readStoreFile(storePath)
+    tasks.push(...store.tasks)
+  }
+
+  return status ? tasks.filter((task) => task.status === status) : tasks
 }
 
 export async function getTask(workspaceRoot: string, taskId: string) {
-  const store = await readStore(normalizeRoot(workspaceRoot))
-  return store.tasks.find((task) => task.id === taskId)
+  return (await findTaskStore(normalizeRoot(workspaceRoot), taskId))?.task
 }
 
 export async function updateTask(workspaceRoot: string, taskId: string, patch: Partial<Omit<TaskRecord, 'id'>>) {
   const normalizedRoot = normalizeRoot(workspaceRoot)
-  const store = await readStore(normalizedRoot)
-  const task = store.tasks.find((item) => item.id === taskId)
+  const taskStore = await findTaskStore(normalizedRoot, taskId)
 
-  if (!task) {
+  if (!taskStore) {
     throw new Error(`任务不存在: ${taskId}`)
   }
 
+  const { storePath, store, task } = taskStore
   Object.assign(task, patch, { updatedAt: new Date().toISOString() })
-  await writeStore(normalizedRoot, store)
+  await writeStoreFile(storePath, store)
   return task
 }
 
