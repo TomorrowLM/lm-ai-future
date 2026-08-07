@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import { createTask } from '../dist/server/base/task-store/index.js'
-import { pollTasks } from '../dist/server/feature/orchestrator/poller.js'
+import { pollTasks } from '../dist/server/feature/orchestrator/poll-tasks/poller.js'
 
 test('pollTasks returns live task status and syncs result file completion', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-poll-'))
@@ -64,4 +64,64 @@ test('createTask stores tasks.json next to explicit .agent-orchestrator result f
 
   assert.equal(result.summary.total, 1)
   assert.equal(result.tasks[0].resultFile, task.resultFile)
+})
+
+test('pollTasks returns visualDir for agent placement decisions', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-poll-visual-dir-'))
+  const task = await createTask({
+    title: '轮询视觉目录测试',
+    prompt: '验证 pollTasks visualDir',
+    workspaceRoot,
+    visualDir: path.join('docs', 'design', 'demo', 'brainstorm'),
+  })
+
+  const result = await pollTasks(workspaceRoot, [task.id])
+
+  assert.equal(result.tasks[0].visualDir, task.visualDir)
+})
+
+test('createTask infers visualDir from requirement input file', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-visual-dir-'))
+  const inputFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    'checkplan-task-supervisor-role',
+    'spec.md',
+  )
+  await mkdir(path.dirname(inputFile), { recursive: true })
+  await writeFile(inputFile, 'spec', 'utf8')
+
+  const task = await createTask({
+    title: '视觉目录推断测试',
+    prompt: '验证 visualDir',
+    workspaceRoot,
+    inputFiles: [inputFile],
+  })
+
+  assert.equal(
+    task.visualDir,
+    path.join(
+      workspaceRoot,
+      'docs',
+      'design',
+      'checkplan-task-supervisor-role',
+      'brainstorm',
+    ),
+  )
+})
+
+test('createTask honors explicit visualDir inside workspace', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-visual-dir-explicit-'))
+  const task = await createTask({
+    title: '显式视觉目录测试',
+    prompt: '验证 visualDir',
+    workspaceRoot,
+    visualDir: path.join('docs', 'design', 'demo', 'brainstorm'),
+  })
+
+  assert.equal(
+    task.visualDir,
+    path.join(workspaceRoot, 'docs', 'design', 'demo', 'brainstorm'),
+  )
 })

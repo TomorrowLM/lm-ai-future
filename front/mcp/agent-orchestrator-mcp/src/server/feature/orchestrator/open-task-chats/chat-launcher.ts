@@ -30,7 +30,7 @@ export async function openTaskChat(task: TaskRecord) {
     '--reuse-window',
     '--add-file',
     specFile,
-    `请严格执行 spec 文件 ${specFile}。完成后写入结果文件并调用 agent_complete_task。`,
+    `请严格执行 spec 文件 ${specFile}。如需生成视觉/头脑风暴文件，请放入 ${task.visualDir}。完成后写入结果文件并调用 agent_complete_task。`,
   ]
 
   const codeCli = await resolveCodeCli()

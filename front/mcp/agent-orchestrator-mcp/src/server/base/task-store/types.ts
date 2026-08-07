@@ -16,6 +16,7 @@ export interface TaskRecord {
   workspaceRoot: string
   inputFiles: string[]
   resultFile: string
+  visualDir: string
   status: TaskStatus
   createdAt: string
   updatedAt: string
@@ -32,6 +33,7 @@ export interface CreateTaskInput {
   workspaceRoot: string
   inputFiles?: string[]
   resultFile?: string
+  visualDir?: string
 }
 
 export interface TaskStoreData {

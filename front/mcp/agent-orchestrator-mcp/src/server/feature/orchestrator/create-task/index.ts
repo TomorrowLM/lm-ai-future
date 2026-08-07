@@ -10,6 +10,7 @@ export async function handleAgentCreateTask(args: ToolArguments): Promise<CallTo
     workspaceRoot: requireString(args, 'workspaceRoot'),
     inputFiles: optionalStringArray(args, 'inputFiles'),
     resultFile: optionalString(args, 'resultFile'),
+    visualDir: optionalString(args, 'visualDir'),
   }
 
   return textResponse(await createTask(input))

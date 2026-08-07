@@ -31,6 +31,44 @@ export function defaultResultFile(workspaceRoot: string, taskId: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, resultsDirName, `${taskId}.md`)
 }
 
+export function defaultVisualDir(workspaceRoot: string) {
+  return path.join(normalizeRoot(workspaceRoot), '.superpowers', 'brainstorm')
+}
+
+function pathSegments(targetPath: string) {
+  return path.normalize(targetPath).split(path.sep).filter(Boolean)
+}
+
+function requirementDirFromPath(targetPath: string) {
+  const normalized = path.normalize(targetPath)
+  const parts = pathSegments(normalized)
+  const orchestratorIndex = parts.lastIndexOf(orchestratorDirName)
+
+  if (orchestratorIndex > 0) {
+    return path.join(path.parse(normalized).root, ...parts.slice(0, orchestratorIndex))
+  }
+
+  for (const section of ['design', 'prod']) {
+    const sectionIndex = parts.findIndex((part, index) => parts[index - 1] === 'docs' && part === section)
+
+    if (sectionIndex >= 0 && parts[sectionIndex + 1]) {
+      return path.join(path.parse(normalized).root, ...parts.slice(0, sectionIndex + 2))
+    }
+  }
+
+  return undefined
+}
+
+function inferVisualDir(workspaceRoot: string, candidates: string[]) {
+  for (const candidate of candidates) {
+    const requirementDir = requirementDirFromPath(candidate)
+
+    if (requirementDir) return path.join(requirementDir, 'brainstorm')
+  }
+
+  return defaultVisualDir(workspaceRoot)
+}
+
 function taskStorePathForResultFile(workspaceRoot: string, resultFile: string) {
   const normalizedRoot = normalizeRoot(workspaceRoot)
   const resolvedResultFile = resolveInsideWorkspace(normalizedRoot, resultFile)
@@ -89,17 +127,9 @@ async function readStoreFile(filePath: string): Promise<TaskStoreData> {
   }
 }
 
-async function readStore(workspaceRoot: string): Promise<TaskStoreData> {
-  return readStoreFile(taskStorePath(workspaceRoot))
-}
-
 async function writeStoreFile(filePath: string, data: TaskStoreData) {
   await mkdir(path.dirname(filePath), { recursive: true })
   await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
-}
-
-async function writeStore(workspaceRoot: string, data: TaskStoreData) {
-  await writeStoreFile(taskStorePath(workspaceRoot), data)
 }
 
 async function findTaskStore(workspaceRoot: string, taskId: string) {
@@ -125,6 +155,9 @@ export async function createTask(input: CreateTaskInput) {
   const resultFile = input.resultFile
     ? resolveInsideWorkspace(workspaceRoot, input.resultFile)
     : defaultResultFile(workspaceRoot, id)
+  const visualDir = input.visualDir
+    ? resolveInsideWorkspace(workspaceRoot, input.visualDir)
+    : inferVisualDir(workspaceRoot, input.resultFile ? [resultFile, ...inputFiles] : inputFiles)
   const storePath = input.resultFile
     ? taskStorePathForResultFile(workspaceRoot, input.resultFile)
     : taskStorePath(workspaceRoot)
@@ -136,6 +169,7 @@ export async function createTask(input: CreateTaskInput) {
     workspaceRoot,
     inputFiles,
     resultFile,
+    visualDir,
     status: 'pending',
     createdAt: now,
     updatedAt: now,

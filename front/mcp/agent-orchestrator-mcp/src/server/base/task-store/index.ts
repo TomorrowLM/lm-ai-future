@@ -10,6 +10,7 @@ export {
   createTask,
   createTasks,
   defaultResultFile,
+  defaultVisualDir,
   getTask,
   hasTaskResult,
   listTasks,

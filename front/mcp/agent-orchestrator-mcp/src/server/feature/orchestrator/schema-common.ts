@@ -16,6 +16,7 @@ export const taskRequestSchema: Tool['inputSchema'] = {
       description: '任务需要读取的文件路径，必须在 workspaceRoot 内',
     },
     resultFile: { type: 'string', description: '结果文件路径，默认写入 docs/.agent-orchestrator/results/task-id.md' },
+    visualDir: { type: 'string', description: '视觉/头脑风暴文件目录，未传时根据需求文件或结果文件自动推断' },
   },
   required: ['title', 'prompt', 'workspaceRoot'],
 }
