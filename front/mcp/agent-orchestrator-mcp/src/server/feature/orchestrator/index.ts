@@ -1,20 +1,44 @@
 import type { CallToolRequest, CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { errorResponse } from '../../../utils/text.js'
-import { handleAgentCompleteTask } from './complete-task.js'
-import { handleAgentCreateTask } from './create-task.js'
-import { handleAgentCreateTasks } from './create-tasks.js'
-import { handleAgentGetTask } from './get-task.js'
-import { handleAgentListTasks } from './list-tasks.js'
-import { handleAgentMarkTaskReviewed } from './mark-task-reviewed.js'
-import { handleAgentOpenTaskChats } from './open-task-chats.js'
-import { handleAgentPollTasks } from './poll-tasks.js'
-import { handleAgentReadTaskResult } from './read-task-result.js'
-import { handleAgentRequestRework } from './request-rework.js'
-import { orchestratorTools } from './schema.js'
-import { handleAgentSummarizeResults } from './summarize-results.js'
-import { handleAgentWaitForTasks } from './wait-for-tasks.js'
+import { handleAgentCompleteTask } from './complete-task/index.js'
+import { agentCompleteTaskTool } from './complete-task/schema.js'
+import { handleAgentCreateTask } from './create-task/index.js'
+import { agentCreateTaskTool } from './create-task/schema.js'
+import { handleAgentCreateTasks } from './create-tasks/index.js'
+import { agentCreateTasksTool } from './create-tasks/schema.js'
+import { handleAgentGetTask } from './get-task/index.js'
+import { agentGetTaskTool } from './get-task/schema.js'
+import { handleAgentListTasks } from './list-tasks/index.js'
+import { agentListTasksTool } from './list-tasks/schema.js'
+import { handleAgentMarkTaskReviewed } from './mark-task-reviewed/index.js'
+import { agentMarkTaskReviewedTool } from './mark-task-reviewed/schema.js'
+import { handleAgentOpenTaskChats } from './open-task-chats/index.js'
+import { agentOpenTaskChatsTool } from './open-task-chats/schema.js'
+import { handleAgentPollTasks } from './poll-tasks/index.js'
+import { agentPollTasksTool } from './poll-tasks/schema.js'
+import { handleAgentReadTaskResult } from './read-task-result/index.js'
+import { agentReadTaskResultTool } from './read-task-result/schema.js'
+import { handleAgentRequestRework } from './request-rework/index.js'
+import { agentRequestReworkTool } from './request-rework/schema.js'
+import { handleAgentSummarizeResults } from './summarize-results/index.js'
+import { agentSummarizeResultsTool } from './summarize-results/schema.js'
+import { handleAgentWaitForTasks } from './wait-for-tasks/index.js'
+import { agentWaitForTasksTool } from './wait-for-tasks/schema.js'
 
-export const tools = orchestratorTools
+export const tools = [
+  agentCreateTaskTool,
+  agentCreateTasksTool,
+  agentListTasksTool,
+  agentGetTaskTool,
+  agentOpenTaskChatsTool,
+  agentWaitForTasksTool,
+  agentPollTasksTool,
+  agentCompleteTaskTool,
+  agentReadTaskResultTool,
+  agentMarkTaskReviewedTool,
+  agentRequestReworkTool,
+  agentSummarizeResultsTool,
+]
 
 function getArgs(request: CallToolRequest) {
   const args = request.params.arguments

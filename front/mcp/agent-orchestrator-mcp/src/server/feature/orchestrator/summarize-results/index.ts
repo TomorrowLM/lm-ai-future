@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { readTaskResult } from '../../base/task-store/index.js'
-import { optionalStringArray, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { readTaskResult } from '../../../base/task-store/index.js'
+import { optionalStringArray, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 
 export async function handleAgentSummarizeResults(args: ToolArguments): Promise<CallToolResult> {
   const workspaceRoot = requireString(args, 'workspaceRoot')

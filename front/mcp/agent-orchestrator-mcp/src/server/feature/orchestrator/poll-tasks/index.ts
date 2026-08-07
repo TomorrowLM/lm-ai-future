@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { optionalStringArray, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { optionalStringArray, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 import { pollTasks } from './poller.js'
 
 export async function handleAgentPollTasks(args: ToolArguments): Promise<CallToolResult> {

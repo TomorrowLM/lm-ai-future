@@ -2,7 +2,7 @@ import {
   getTask,
   syncCompletedTaskFromResult,
   type TaskRecord,
-} from '../../base/task-store/index.js'
+} from '../../../base/task-store/index.js'
 
 function delay(ms: number) {
   return new Promise((resolve) => {

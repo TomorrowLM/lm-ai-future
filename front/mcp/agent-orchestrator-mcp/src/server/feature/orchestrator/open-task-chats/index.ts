@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { getTask, updateTask } from '../../base/task-store/index.js'
-import { optionalStringArray, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { getTask, updateTask } from '../../../base/task-store/index.js'
+import { optionalStringArray, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 import { openTaskChat } from './chat-launcher.js'
 
 export async function handleAgentOpenTaskChats(args: ToolArguments): Promise<CallToolResult> {

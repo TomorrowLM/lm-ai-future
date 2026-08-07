@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { listTasks, taskStatuses, type TaskStatus } from '../../base/task-store/index.js'
-import { optionalString, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { listTasks, taskStatuses, type TaskStatus } from '../../../base/task-store/index.js'
+import { optionalString, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 
 function optionalTaskStatus(args: ToolArguments) {
   const status = optionalString(args, 'status')

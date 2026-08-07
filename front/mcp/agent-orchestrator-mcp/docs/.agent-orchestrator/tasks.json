@@ -1,0 +1,15 @@
+{
+  "tasks": [
+    {
+      "id": "task-171e6834-5df5-4ca8-af95-09c309b79ceb",
+      "title": "测试-创建任务验证",
+      "prompt": "这是一个测试任务，用于验证 agent-orchestrator MCP 重构后各工具是否正常工作。请输出 OK。",
+      "workspaceRoot": "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp",
+      "inputFiles": [],
+      "resultFile": "/Users/zm/lm/lm-ai-future/front/mcp/agent-orchestrator-mcp/docs/.agent-orchestrator/results/task-171e6834-5df5-4ca8-af95-09c309b79ceb.md",
+      "status": "pending",
+      "createdAt": "2026-08-07T08:57:15.764Z",
+      "updatedAt": "2026-08-07T08:57:15.764Z"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { createTasks, type CreateTaskInput } from '../../base/task-store/index.js'
-import { optionalObjectArray, optionalString, optionalStringArray, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { createTasks, type CreateTaskInput } from '../../../base/task-store/index.js'
+import { optionalObjectArray, optionalString, optionalStringArray, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 
 function toCreateTaskInput(args: ToolArguments): CreateTaskInput {
   return {

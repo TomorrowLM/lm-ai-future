@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { access } from 'node:fs/promises'
 import { constants } from 'node:fs'
-import type { TaskRecord } from '../../base/task-store/index.js'
+import type { TaskRecord } from '../../../base/task-store/index.js'
 
 const macOSCodeCli = '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
 

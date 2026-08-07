@@ -3,7 +3,7 @@ import {
   hasTaskResult,
   syncCompletedTaskFromResult,
   type TaskRecord,
-} from '../../base/task-store/index.js'
+} from '../../../base/task-store/index.js'
 
 export interface PolledTask {
   id: string

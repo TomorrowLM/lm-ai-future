@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { createTask, type CreateTaskInput } from '../../base/task-store/index.js'
-import { requireString, optionalString, optionalStringArray, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { createTask, type CreateTaskInput } from '../../../base/task-store/index.js'
+import { requireString, optionalString, optionalStringArray, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 
 export async function handleAgentCreateTask(args: ToolArguments): Promise<CallToolResult> {
   const input: CreateTaskInput = {

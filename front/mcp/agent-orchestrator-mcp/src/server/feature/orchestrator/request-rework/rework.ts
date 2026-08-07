@@ -1,7 +1,7 @@
 import {
   getTask,
   updateTask,
-} from '../../base/task-store/index.js'
+} from '../../../base/task-store/index.js'
 
 export async function requestRework(workspaceRoot: string, taskId: string, reason: string) {
   const task = await getTask(workspaceRoot, taskId)

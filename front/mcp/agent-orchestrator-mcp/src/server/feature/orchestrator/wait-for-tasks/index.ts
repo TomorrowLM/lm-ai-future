@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import { optionalNumber, optionalStringArray, requireString, type ToolArguments } from '../../../utils/args.js'
-import { textResponse } from '../../../utils/text.js'
+import { optionalNumber, optionalStringArray, requireString, type ToolArguments } from '../../../../utils/args.js'
+import { textResponse } from '../../../../utils/text.js'
 import { waitForTasks } from './waiter.js'
 
 export async function handleAgentWaitForTasks(args: ToolArguments): Promise<CallToolResult> {
