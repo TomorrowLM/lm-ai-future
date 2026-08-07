@@ -2,7 +2,6 @@ import { spawn } from 'node:child_process'
 import { access } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import type { TaskRecord } from '../../base/task-store/index.js'
-import { writeTaskPrompt } from './prompt.js'
 
 const macOSCodeCli = '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
 
@@ -18,16 +17,20 @@ async function resolveCodeCli() {
 }
 
 export async function openTaskChat(task: TaskRecord) {
-  const promptFile = await writeTaskPrompt(task)
+  const specFile = task.inputFiles[0]
+
+  if (!specFile) {
+    throw new Error(`任务 ${task.id} 没有关联的 spec 文件`)
+  }
+
   const args = [
     'chat',
     '--mode',
     'agent',
     '--reuse-window',
-    // '--maximize',
     '--add-file',
-    promptFile,
-    `请严格执行任务文件 ${promptFile}。完成后写入结果文件并调用 agent_complete_task。`,
+    specFile,
+    `请严格执行 spec 文件 ${specFile}。完成后写入结果文件并调用 agent_complete_task。`,
   ]
 
   const codeCli = await resolveCodeCli()
@@ -46,5 +49,5 @@ export async function openTaskChat(task: TaskRecord) {
 
   child.unref()
 
-  return { taskId: task.id, promptFile, resultFile: task.resultFile, codeCli, args }
+  return { taskId: task.id, resultFile: task.resultFile, codeCli, args }
 }

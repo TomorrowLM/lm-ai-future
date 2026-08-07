@@ -5,7 +5,6 @@ import { assertSafeWorkspaceRoot, resolveInsideWorkspace } from './path-guard.js
 import type { CreateTaskInput, TaskRecord, TaskStatus, TaskStoreData } from './types.js'
 
 const storeDirName = path.join('docs', '.agent-orchestrator')
-const promptsDirName = 'prompts'
 const resultsDirName = 'results'
 
 function normalizeRoot(workspaceRoot: string) {
@@ -16,14 +15,6 @@ function normalizeRoot(workspaceRoot: string) {
 
 export function taskStorePath(workspaceRoot: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, 'tasks.json')
-}
-
-export function defaultPromptFile(workspaceRoot: string, taskId: string) {
-  return path.join(normalizeRoot(workspaceRoot), storeDirName, promptsDirName, `${taskId}.md`)
-}
-
-export function defaultReworkPromptFile(workspaceRoot: string, taskId: string, reworkCount: number) {
-  return path.join(normalizeRoot(workspaceRoot), storeDirName, promptsDirName, `${taskId}.rework-${reworkCount}.md`)
 }
 
 export function defaultResultFile(workspaceRoot: string, taskId: string) {
@@ -56,7 +47,6 @@ export async function createTask(input: CreateTaskInput) {
   const id = `task-${randomUUID()}`
   const now = new Date().toISOString()
   const inputFiles = (input.inputFiles ?? []).map((item) => resolveInsideWorkspace(workspaceRoot, item))
-  const promptFile = defaultPromptFile(workspaceRoot, id)
   const resultFile = input.resultFile
     ? resolveInsideWorkspace(workspaceRoot, input.resultFile)
     : defaultResultFile(workspaceRoot, id)
@@ -67,7 +57,6 @@ export async function createTask(input: CreateTaskInput) {
     prompt: input.prompt,
     workspaceRoot,
     inputFiles,
-    promptFile,
     resultFile,
     status: 'pending',
     createdAt: now,

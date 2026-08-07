@@ -10,7 +10,6 @@ export interface PolledTask {
   title: string
   status: TaskRecord['status']
   hasResult: boolean
-  promptFile: string
   resultFile: string
   updatedAt: string
   startedAt?: string
@@ -25,7 +24,6 @@ function toPolledTask(task: TaskRecord, hasResult: boolean): PolledTask {
     title: task.title,
     status: task.status,
     hasResult,
-    promptFile: task.promptFile,
     resultFile: task.resultFile,
     updatedAt: task.updatedAt,
     startedAt: task.startedAt,

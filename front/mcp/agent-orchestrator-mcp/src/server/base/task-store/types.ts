@@ -15,7 +15,6 @@ export interface TaskRecord {
   prompt: string
   workspaceRoot: string
   inputFiles: string[]
-  promptFile: string
   resultFile: string
   status: TaskStatus
   createdAt: string

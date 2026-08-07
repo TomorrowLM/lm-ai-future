@@ -9,8 +9,6 @@ export { taskStatuses } from './types.js'
 export {
   createTask,
   createTasks,
-  defaultPromptFile,
-  defaultReworkPromptFile,
   defaultResultFile,
   getTask,
   hasTaskResult,
