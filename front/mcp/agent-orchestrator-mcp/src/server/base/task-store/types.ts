@@ -22,6 +22,7 @@ export interface TaskRecord {
   updatedAt: string
   startedAt?: string
   completedAt?: string
+  reworkCount?: number
   error?: string
   reviewNote?: string
 }

@@ -32,9 +32,9 @@ flowchart LR
 	Orchestrator --> Store[Task Store]
 	Orchestrator --> Prompt[Prompt Writer]
 	Orchestrator --> CodeCLI[VS Code CLI]
-	Store --> Json[(.agent-orchestrator/tasks.json)]
-	Prompt --> PromptFiles[(.agent-orchestrator/prompts/*.md)]
-	Orchestrator --> ResultFiles[(.agent-results/*.md)]
+	Store --> Json[(docs/.agent-orchestrator/tasks.json)]
+	Prompt --> PromptFiles[(docs/.agent-orchestrator/prompts/*.md)]
+	Orchestrator --> ResultFiles[(docs/.agent-orchestrator/results/*.md)]
 	CodeCLI --> SubChat[Copilot Chat 子窗口]
 	SubChat --> ResultFiles
 ```
@@ -57,12 +57,14 @@ flowchart LR
 
 ```text
 <workspaceRoot>/
-	.agent-orchestrator/
+	docs/
+		.agent-orchestrator/
 		tasks.json              # 任务列表和状态记录
 		prompts/
-			task-<uuid>.md        # 子 Agent 执行 Prompt
-	.agent-results/
-		task-<uuid>.md          # 子 Agent 结果文件
+			task-<uuid>.md          # 子 Agent 初始执行 Prompt
+			task-<uuid>.rework-1.md # 子 Agent 返工 Prompt
+		results/
+			task-<uuid>.md          # 子 Agent 结果文件
 ```
 
 ### 任务状态
@@ -75,6 +77,8 @@ flowchart LR
 | `failed` | 任务失败。 |
 | `reviewed` | 主 Agent 已审查该任务结果。 |
 | `rework_requested` | 主 Agent 要求子任务返工。 |
+
+任务记录中还会保存 `promptFile`、`resultFile`、`reviewNote`、`reworkCount` 等字段。返工时 `promptFile` 会更新为最新的 `task-<uuid>.rework-N.md`。
 
 ### MCP 工具
 
@@ -103,16 +107,16 @@ flowchart LR
 - `prompt`：任务说明和验收要求；
 - `workspaceRoot`：任务所属工作区绝对路径；
 - `inputFiles`：子任务需要读取的文件列表；
-- `resultFile`：可选结果文件路径，未传时默认写入 `.agent-results/task-<uuid>.md`。
+- `resultFile`：可选结果文件路径，未传时默认写入 `docs/.agent-orchestrator/results/task-<uuid>.md`。
 
-创建后，服务端会在 `.agent-orchestrator/tasks.json` 中追加任务记录，初始状态为 `pending`。
+创建后，服务端会在 `docs/.agent-orchestrator/tasks.json` 中追加任务记录，初始状态为 `pending`。
 
 ### 2. 打开子聊天窗口
 
 主 Agent 调用 `agent_open_task_chats` 后，服务端会：
 
-1. 为每个任务生成 `.agent-orchestrator/prompts/task-<uuid>.md`；
-2. 通过 VS Code CLI 执行 `code chat --mode agent --reuse-window --add-file <promptFile>`；
+1. 为每个任务生成 `docs/.agent-orchestrator/prompts/task-<uuid>.md`；
+2. 通过 VS Code CLI 执行 `code chat --mode agent --reuse-window --maximize --add-file <promptFile>`；
 3. 将任务状态更新为 `running`；
 4. 返回任务 ID、Prompt 文件路径、结果文件路径和使用的 `codeCli`。
 
@@ -143,9 +147,37 @@ flowchart LR
 1. 使用 `agent_read_task_result` 读取单个任务结果；
 2. 使用 `agent_summarize_results` 合并多个任务结果；
 3. 审查通过后调用 `agent_mark_task_reviewed`；
-4. 结果不合格时调用 `agent_request_rework`，写入返工原因。
+4. 结果不合格时调用 `agent_request_rework`，写入返工原因并生成返工 Prompt。
 
-### 6. 典型时序
+### 6. 返工流程
+
+当主 Agent 校验发现子任务结果不合格时，调用 `agent_request_rework`：
+
+```json
+{
+	"workspaceRoot": "/absolute/workspace",
+	"taskId": "task-<uuid>",
+	"reason": "缺少边界场景分析，请补充后覆盖结果文件。"
+}
+```
+
+服务端会：
+
+1. 将任务状态更新为 `rework_requested`；
+2. 将 `reviewNote` / `error` 写为返工原因；
+3. 将 `reworkCount` 加 1；
+4. 生成 `docs/.agent-orchestrator/prompts/task-<uuid>.rework-N.md`；
+5. 把任务记录里的 `promptFile` 更新为最新返工 Prompt。
+
+随后主 Agent 再调用 `agent_open_task_chats`，服务端会使用最新 `promptFile` 打开新的子聊天窗口。子 Agent 读取上次结果文件，按返工意见修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
+
+推荐主窗口口令：
+
+```text
+请返工 task-<uuid>，原因是：缺少边界场景分析，请补充后覆盖结果文件，并打开子聊天窗继续执行。
+```
+
+### 7. 典型时序
 
 ```mermaid
 sequenceDiagram
@@ -170,6 +202,9 @@ sequenceDiagram
 	MCP->>Result: 读取多个结果
 	MCP-->>Main: 返回汇总
 	Main->>MCP: agent_mark_task_reviewed / agent_request_rework
+	MCP->>Store: 返工时生成 rework Prompt 并标记 rework_requested
+	Main->>MCP: agent_open_task_chats
+	MCP-->>Chat: 使用最新 rework Prompt 打开新的子聊天
 ```
 
 ## 使用方式
@@ -212,7 +247,7 @@ CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" 
 
 - `workspaceRoot` 必须是绝对路径；
 - `inputFiles` 和自定义 `resultFile` 必须位于 `workspaceRoot` 内；
-- 服务只负责本地任务记录、Prompt 文件和结果文件读写；
+- 服务只负责 `docs/.agent-orchestrator` 下的本地任务记录、Prompt 文件和结果文件读写；
 - 子 Agent Prompt 明确禁止提交、推送、删除文件或执行破坏性操作；
 - `agent_open_task_chats` 只打开子聊天窗口，不读取聊天输出。
 

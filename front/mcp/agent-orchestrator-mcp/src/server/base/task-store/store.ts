@@ -22,6 +22,10 @@ export function defaultPromptFile(workspaceRoot: string, taskId: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, promptsDirName, `${taskId}.md`)
 }
 
+export function defaultReworkPromptFile(workspaceRoot: string, taskId: string, reworkCount: number) {
+  return path.join(normalizeRoot(workspaceRoot), storeDirName, promptsDirName, `${taskId}.rework-${reworkCount}.md`)
+}
+
 export function defaultResultFile(workspaceRoot: string, taskId: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, resultsDirName, `${taskId}.md`)
 }

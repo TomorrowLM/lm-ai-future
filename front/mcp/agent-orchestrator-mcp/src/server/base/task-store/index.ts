@@ -10,6 +10,7 @@ export {
   createTask,
   createTasks,
   defaultPromptFile,
+  defaultReworkPromptFile,
   defaultResultFile,
   getTask,
   hasTaskResult,
