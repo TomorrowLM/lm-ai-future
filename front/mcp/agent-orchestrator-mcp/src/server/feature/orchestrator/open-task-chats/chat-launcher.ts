@@ -49,5 +49,5 @@ export async function openTaskChat(task: TaskRecord) {
 
   child.unref()
 
-  return { taskId: task.id, resultFile: task.resultFile, codeCli, args }
+  return { taskId: task.id, resultFile: task.resultFile }
 }

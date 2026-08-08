@@ -4,10 +4,10 @@ import path from 'node:path'
 import { assertSafeWorkspaceRoot, resolveInsideWorkspace } from './path-guard.js'
 import type { CreateTaskInput, TaskRecord, TaskStatus, TaskStoreData } from './types.js'
 
-const storeDirName = path.join('docs', '.agent-orchestrator')
-const orchestratorDirName = '.agent-orchestrator'
+const storeDirName = 'docs'
 const tasksFileName = 'tasks.json'
 const resultsDirName = 'results'
+const requirementSections = ['design', 'prod']
 const ignoredDiscoveryDirs = new Set([
   '.git',
   'node_modules',
@@ -31,6 +31,16 @@ export function defaultResultFile(workspaceRoot: string, taskId: string) {
   return path.join(normalizeRoot(workspaceRoot), storeDirName, resultsDirName, `${taskId}.md`)
 }
 
+function defaultResultFileFromCandidates(workspaceRoot: string, taskId: string, candidates: string[]) {
+  for (const candidate of candidates) {
+    const requirementDir = requirementDirFromPath(candidate)
+
+    if (requirementDir) return path.join(requirementDir, resultsDirName, `${taskId}.md`)
+  }
+
+  return defaultResultFile(workspaceRoot, taskId)
+}
+
 export function defaultVisualDir(workspaceRoot: string) {
   return path.join(normalizeRoot(workspaceRoot), '.superpowers', 'brainstorm')
 }
@@ -42,13 +52,8 @@ function pathSegments(targetPath: string) {
 function requirementDirFromPath(targetPath: string) {
   const normalized = path.normalize(targetPath)
   const parts = pathSegments(normalized)
-  const orchestratorIndex = parts.lastIndexOf(orchestratorDirName)
 
-  if (orchestratorIndex > 0) {
-    return path.join(path.parse(normalized).root, ...parts.slice(0, orchestratorIndex))
-  }
-
-  for (const section of ['design', 'prod']) {
+  for (const section of requirementSections) {
     const sectionIndex = parts.findIndex((part, index) => parts[index - 1] === 'docs' && part === section)
 
     if (sectionIndex >= 0 && parts[sectionIndex + 1]) {
@@ -72,14 +77,16 @@ function inferVisualDir(workspaceRoot: string, candidates: string[]) {
 function taskStorePathForResultFile(workspaceRoot: string, resultFile: string) {
   const normalizedRoot = normalizeRoot(workspaceRoot)
   const resolvedResultFile = resolveInsideWorkspace(normalizedRoot, resultFile)
-  const parts = resolvedResultFile.split(path.sep)
-  const orchestratorIndex = parts.lastIndexOf(orchestratorDirName)
 
-  if (orchestratorIndex >= 0 && parts[orchestratorIndex + 1] === resultsDirName) {
-    return path.join(parts.slice(0, orchestratorIndex + 1).join(path.sep), tasksFileName)
-  }
+  const requirementDir = requirementDirFromPath(resolvedResultFile)
+
+  if (requirementDir) return path.join(requirementDir, tasksFileName)
 
   return taskStorePath(normalizedRoot)
+}
+
+function isRequirementTaskStore(directory: string) {
+  return Boolean(requirementDirFromPath(path.join(directory, resultsDirName, 'placeholder.md')))
 }
 
 async function discoverTaskStorePaths(workspaceRoot: string) {
@@ -97,16 +104,14 @@ async function discoverTaskStorePaths(workspaceRoot: string) {
     }
 
     for (const entry of entries) {
-      if (!entry.isDirectory() || ignoredDiscoveryDirs.has(entry.name)) continue
-
-      const nextDir = path.join(directory, entry.name)
-
-      if (entry.name === orchestratorDirName) {
-        storePaths.add(path.join(nextDir, tasksFileName))
+      if (entry.isFile() && entry.name === tasksFileName && isRequirementTaskStore(directory)) {
+        storePaths.add(path.join(directory, entry.name))
         continue
       }
 
-      await walk(nextDir)
+      if (!entry.isDirectory() || ignoredDiscoveryDirs.has(entry.name)) continue
+
+      await walk(path.join(directory, entry.name))
     }
   }
 
@@ -127,9 +132,38 @@ async function readStoreFile(filePath: string): Promise<TaskStoreData> {
   }
 }
 
+/** 文件级写锁：防止并发 writeStoreFile 竞态损坏 JSON */
+const writeLocks = new Map<string, Promise<void>>()
+
+function withWriteLock(filePath: string, fn: () => Promise<void>): Promise<void> {
+  const prev = writeLocks.get(filePath) ?? Promise.resolve()
+  const next = prev.then(fn, fn).finally(() => {
+    if (writeLocks.get(filePath) === next) writeLocks.delete(filePath)
+  })
+  writeLocks.set(filePath, next)
+  return next
+}
+
+/** 原子化 read→modify→write：完整保护读改写周期 */
+async function withStoreLock<T>(
+  filePath: string,
+  fn: (store: TaskStoreData) => T | Promise<T>
+): Promise<T> {
+  let result: T
+  await withWriteLock(filePath, async () => {
+    const store = await readStoreFile(filePath)
+    result = await fn(store)
+    await mkdir(path.dirname(filePath), { recursive: true })
+    await writeFile(filePath, `${JSON.stringify(store, null, 2)}\n`, 'utf8')
+  })
+  return result!
+}
+
 async function writeStoreFile(filePath: string, data: TaskStoreData) {
-  await mkdir(path.dirname(filePath), { recursive: true })
-  await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
+  await withWriteLock(filePath, async () => {
+    await mkdir(path.dirname(filePath), { recursive: true })
+    await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
+  })
 }
 
 async function findTaskStore(workspaceRoot: string, taskId: string) {
@@ -154,13 +188,11 @@ export async function createTask(input: CreateTaskInput) {
   const inputFiles = (input.inputFiles ?? []).map((item) => resolveInsideWorkspace(workspaceRoot, item))
   const resultFile = input.resultFile
     ? resolveInsideWorkspace(workspaceRoot, input.resultFile)
-    : defaultResultFile(workspaceRoot, id)
+    : defaultResultFileFromCandidates(workspaceRoot, id, inputFiles)
   const visualDir = input.visualDir
     ? resolveInsideWorkspace(workspaceRoot, input.visualDir)
     : inferVisualDir(workspaceRoot, input.resultFile ? [resultFile, ...inputFiles] : inputFiles)
-  const storePath = input.resultFile
-    ? taskStorePathForResultFile(workspaceRoot, input.resultFile)
-    : taskStorePath(workspaceRoot)
+  const storePath = taskStorePathForResultFile(workspaceRoot, resultFile)
 
   const task: TaskRecord = {
     id,
@@ -175,9 +207,9 @@ export async function createTask(input: CreateTaskInput) {
     updatedAt: now,
   }
 
-  const store = await readStoreFile(storePath)
-  store.tasks.push(task)
-  await writeStoreFile(storePath, store)
+  await withStoreLock(storePath, (store) => {
+    store.tasks.push(task)
+  })
   return task
 }
 
@@ -207,17 +239,20 @@ export async function getTask(workspaceRoot: string, taskId: string) {
 }
 
 export async function updateTask(workspaceRoot: string, taskId: string, patch: Partial<Omit<TaskRecord, 'id'>>) {
-  const normalizedRoot = normalizeRoot(workspaceRoot)
-  const taskStore = await findTaskStore(normalizedRoot, taskId)
+  const searchResult = await findTaskStore(normalizeRoot(workspaceRoot), taskId)
 
-  if (!taskStore) {
+  if (!searchResult) {
     throw new Error(`任务不存在: ${taskId}`)
   }
 
-  const { storePath, store, task } = taskStore
-  Object.assign(task, patch, { updatedAt: new Date().toISOString() })
-  await writeStoreFile(storePath, store)
-  return task
+  const { storePath } = searchResult
+
+  return withStoreLock(storePath, (store) => {
+    const task = store.tasks.find((item) => item.id === taskId)
+    if (!task) throw new Error(`任务不存在: ${taskId}`)
+    Object.assign(task, patch, { updatedAt: new Date().toISOString() })
+    return task
+  })
 }
 
 export async function writeTaskResult(workspaceRoot: string, taskId: string, result: string) {

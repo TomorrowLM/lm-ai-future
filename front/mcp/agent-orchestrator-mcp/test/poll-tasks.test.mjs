@@ -14,7 +14,7 @@ test('pollTasks returns live task status and syncs result file completion', asyn
     workspaceRoot,
   })
 
-  assert.equal(task.resultFile, path.join(workspaceRoot, 'docs', '.agent-orchestrator', 'results', `${task.id}.md`))
+  assert.equal(task.resultFile, path.join(workspaceRoot, 'docs', 'results', `${task.id}.md`))
 
   await mkdir(path.dirname(task.resultFile), { recursive: true })
   await writeFile(task.resultFile, 'done', 'utf8')
@@ -28,13 +28,12 @@ test('pollTasks returns live task status and syncs result file completion', asyn
   assert.equal(result.tasks[0].hasResult, true)
 })
 
-test('createTask stores tasks.json next to explicit .agent-orchestrator result file', async () => {
+test('createTask stores tasks.json under requirement dir for explicit design result file', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-feature-store-'))
   const resultFile = path.join(
     'docs',
     'design',
     '2026-08-07-city-list-design',
-    '.agent-orchestrator',
     'results',
     '01-result.md',
   )
@@ -51,7 +50,6 @@ test('createTask stores tasks.json next to explicit .agent-orchestrator result f
     'docs',
     'design',
     '2026-08-07-city-list-design',
-    '.agent-orchestrator',
     'tasks.json',
   )
   const store = JSON.parse(await readFile(expectedStoreFile, 'utf8'))
@@ -64,6 +62,47 @@ test('createTask stores tasks.json next to explicit .agent-orchestrator result f
 
   assert.equal(result.summary.total, 1)
   assert.equal(result.tasks[0].resultFile, task.resultFile)
+})
+
+test('createTask infers resultFile and tasks.json from requirement input file', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-feature-default-'))
+  const inputFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    'checkplan-task-supervisor-role',
+    'spec.md',
+  )
+  await mkdir(path.dirname(inputFile), { recursive: true })
+  await writeFile(inputFile, 'spec', 'utf8')
+
+  const task = await createTask({
+    title: '功能目录默认存储测试',
+    prompt: '验证默认 resultFile 跟随需求目录',
+    workspaceRoot,
+    inputFiles: [inputFile],
+  })
+  const expectedStoreFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    'checkplan-task-supervisor-role',
+    'tasks.json',
+  )
+  const store = JSON.parse(await readFile(expectedStoreFile, 'utf8'))
+
+  assert.equal(
+    task.resultFile,
+    path.join(
+      workspaceRoot,
+      'docs',
+      'design',
+      'checkplan-task-supervisor-role',
+      'results',
+      `${task.id}.md`,
+    ),
+  )
+  assert.equal(store.tasks[0].id, task.id)
 })
 
 test('pollTasks returns visualDir for agent placement decisions', async () => {

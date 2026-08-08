@@ -32,9 +32,9 @@ flowchart LR
 	Orchestrator --> Store[Task Store]
 	Orchestrator --> Prompt[Prompt Writer]
 	Orchestrator --> CodeCLI[VS Code CLI]
-	Store --> Json[(docs/.agent-orchestrator/tasks.json)]
-	Prompt --> PromptFiles[(docs/.agent-orchestrator/prompts/*.md)]
-	Orchestrator --> ResultFiles[(docs/.agent-orchestrator/results/*.md)]
+	Store --> Json[(docs/design/xx/tasks.json)]
+	Prompt --> PromptFiles[(docs/design/xx/prompts/*.md)]
+	Orchestrator --> ResultFiles[(docs/design/xx/results/*.md)]
 	CodeCLI --> SubChat[Copilot Chat 子窗口]
 	SubChat --> ResultFiles
 ```
@@ -53,18 +53,19 @@ flowchart LR
 
 ### 数据落盘
 
-所有任务数据默认写入调用方传入的 `workspaceRoot` 内：
+所有任务数据默认写入调用方传入的 `workspaceRoot` 内。若能从 `inputFiles` 或 `resultFile` 推断出需求目录，则直接落在 `docs/design/xx/` 或 `docs/prod/xx/` 下；无法推断时使用 `docs/` 兜底：
 
 ```text
 <workspaceRoot>/
 	docs/
-		.agent-orchestrator/
-		tasks.json              # 任务列表和状态记录
-		prompts/
-			task-<uuid>.md          # 子 Agent 初始执行 Prompt
-			task-<uuid>.rework-1.md # 子 Agent 返工 Prompt
-		results/
-			task-<uuid>.md          # 子 Agent 结果文件
+		design/
+			xx/
+				tasks.json              # 任务列表和状态记录
+				prompts/
+					task-<uuid>.md          # 子 Agent 初始执行 Prompt
+					task-<uuid>.rework-1.md # 子 Agent 返工 Prompt
+				results/
+					task-<uuid>.md          # 子 Agent 结果文件
 ```
 
 ### 任务状态
@@ -107,15 +108,15 @@ flowchart LR
 - `prompt`：任务说明和验收要求；
 - `workspaceRoot`：任务所属工作区绝对路径；
 - `inputFiles`：子任务需要读取的文件列表；
-- `resultFile`：可选结果文件路径，未传时默认写入 `docs/.agent-orchestrator/results/task-<uuid>.md`。
+- `resultFile`：可选结果文件路径，未传时默认写入 `docs/design|prod/<需求目录>/results/task-<uuid>.md`，无法推断需求目录时写入 `docs/results/task-<uuid>.md`。
 
-创建后，服务端会在 `docs/.agent-orchestrator/tasks.json` 中追加任务记录，初始状态为 `pending`。
+创建后，服务端会在同一需求目录下的 `tasks.json` 中追加任务记录，初始状态为 `pending`。
 
 ### 2. 打开子聊天窗口
 
 主 Agent 调用 `agent_open_task_chats` 后，服务端会：
 
-1. 为每个任务生成 `docs/.agent-orchestrator/prompts/task-<uuid>.md`；
+1. 为每个任务生成同一需求目录下的 `prompts/task-<uuid>.md`；
 2. 通过 VS Code CLI 执行 `code chat --mode agent --reuse-window --maximize --add-file <promptFile>`；
 3. 将任务状态更新为 `running`；
 4. 返回任务 ID、Prompt 文件路径、结果文件路径和使用的 `codeCli`。
@@ -166,7 +167,7 @@ flowchart LR
 1. 将任务状态更新为 `rework_requested`；
 2. 将 `reviewNote` / `error` 写为返工原因；
 3. 将 `reworkCount` 加 1；
-4. 生成 `docs/.agent-orchestrator/prompts/task-<uuid>.rework-N.md`；
+4. 生成同一需求目录下的 `prompts/task-<uuid>.rework-N.md`；
 5. 把任务记录里的 `promptFile` 更新为最新返工 Prompt。
 
 随后主 Agent 再调用 `agent_open_task_chats`，服务端会使用最新 `promptFile` 打开新的子聊天窗口。子 Agent 读取上次结果文件，按返工意见修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
@@ -247,7 +248,7 @@ CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" 
 
 - `workspaceRoot` 必须是绝对路径；
 - `inputFiles` 和自定义 `resultFile` 必须位于 `workspaceRoot` 内；
-- 服务只负责 `docs/.agent-orchestrator` 下的本地任务记录、Prompt 文件和结果文件读写；
+- 服务只负责工作区内任务记录、Prompt 文件和结果文件读写，默认位置为 `docs/design|prod/<需求目录>/`；
 - 子 Agent Prompt 明确禁止提交、推送、删除文件或执行破坏性操作；
 - `agent_open_task_chats` 只打开子聊天窗口，不读取聊天输出。
 
