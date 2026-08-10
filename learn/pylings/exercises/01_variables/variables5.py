@@ -23,15 +23,15 @@ dna_sequence = "AGCTTAGGCTA"
 
 # TODO: Extract the first base of dna_sequence
 # TODO: 提取 dna_sequence 的第一个碱基
-first_base = __ 
+first_base = dna_sequence[0]
 
 # TODO: Extract the last base of dna_sequence
 # TODO: 提取 dna_sequence 的最后一个碱基
-last_base = __  
+last_base = dna_sequence[len(dna_sequence) - 1]
 
 # TODO: Extract the third base of dna_sequence
 # TODO: 提取 dna_sequence 的第三个碱基
-third_base = __  
+third_base = dna_sequence[2]
 
 # === DNA STRING SLICING ===
 # === DNA 字符串切片 ===
@@ -40,15 +40,15 @@ third_base = __
 
 # TODO: Extract the first five bases of dna_sequence
 # TODO: 提取 dna_sequence 的前五个碱基
-first_five_bases = __ 
+first_five_bases = dna_sequence[0:5]
 
 # TODO: Extract the last five bases of dna_sequence
 # TODO: 提取 dna_sequence 的后五个碱基
-last_five_bases = __
+last_five_bases = dna_sequence[-5:]
 
 # TODO: Extract the middle four bases (assuming dna_sequence has 10+ bases)
 # TODO: 提取中间四个碱基（假设 dna_sequence 有 10 个以上碱基）
-middle_bases = __  
+middle_bases = dna_sequence[4:8]
 
 # === DNA REVERSE COMPLEMENT (BASIC) ===
 # === DNA 反向互补（基础）===
@@ -57,7 +57,7 @@ middle_bases = __
 
 # TODO: Reverse dna_sequence using slicing
 # TODO: 使用切片反转 dna_sequence
-reversed_dna = __
+reversed_dna = dna_sequence[::-1]
 
 # === TESTS ===
 # === 测试 ===
@@ -77,8 +77,8 @@ print(f"First base:{first_base}")
 print(f"Third base:{third_base}")
 print(f"Last base:{last_base}")
 
-print(f"First Five base:{first_five_base}")
-print(f"Middle base:{middle_base}")
-print(f"Last Five base:{last_five_base}")
+print(f"First Five base:{first_five_bases}")
+print(f"Middle base:{middle_bases}")
+print(f"Last Five base:{last_five_bases}")
 
 print(f"DNA Sequence Reversed: {reversed_dna}")

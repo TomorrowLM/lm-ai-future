@@ -20,7 +20,7 @@ last_name = "Cleese"
 
 # TODO: Concatenate first_name and last_name with a space in between
 # TODO: 拼接 first_name 和 last_name，中间用空格隔开
-full_name = __ 
+full_name = first_name + " " + last_name
 
 # === CONCATENATION WITH NUMBERS ===
 # === 与数字拼接 ===
@@ -31,7 +31,7 @@ age = 50
 
 # TODO: Concatenate "I am " + age + " years old." (age must be converted to a string)
 # TODO: 拼接 "I am " + age + " years old."（age 必须转换为字符串）
-message = __
+message = "I am " + str(age) + " years old."
 
 # === CONCATENATION USING F-STRINGS ===
 # === 使用 f-string 拼接 ===
@@ -40,7 +40,7 @@ message = __
 
 # TODO: Use f"{full_name} is {age} years old."
 # TODO: 使用 f"{full_name} is {age} years old."
-f_string_message = __
+f_string_message = f"{full_name} is {age} years old."
 
 # === CONCATENATION USING .FORMAT() ===
 # === 使用 .format() 拼接 ===
@@ -49,7 +49,7 @@ f_string_message = __
 
 # TODO: Use "{} is {} years old.".format(full_name, age)
 # TODO: 使用 "{} is {} years old.".format(full_name, age)
-format_message = __  
+format_message = "{} is {} years old.".format(full_name, age)
 
 # === STRING MULTIPLICATION ===
 # === 字符串乘法 ===
@@ -60,7 +60,7 @@ repeat_word = "Hello"
 
 # TODO: Repeat "Hello" 3 times (output: "HelloHelloHello")
 # TODO: 将 "Hello" 重复 3 次（输出："HelloHelloHello"）
-multiplied_string = __ 
+multiplied_string = repeat_word * 3
 
 # === TESTS ===
 # === 测试 ===
@@ -71,7 +71,7 @@ assert full_name == "John Cleese", f"[FAIL] Expected 'John Cleese', got '{full_n
 assert message == "I am 50 years old.", f"[FAIL] Expected 'I am 50 years old.', got '{message}'"
 assert f_string_message == "John Cleese is 50 years old.", f"[FAIL] Expected 'John Cleese is 50 years old.', got '{f_string_message}'"
 assert format_message == "John Cleese is 50 years old.", f"[FAIL] Expected 'John Cleese is 50 years old.', got '{format_message}'"
-assert multiplied_string*3 == "HelloHelloHello", f"[FAIL] Expected 'HelloHelloHello', got '{multiplied_string}'"
+assert multiplied_string == "HelloHelloHello", f"[FAIL] Expected 'HelloHelloHello', got '{multiplied_string}'"
 
 print(f"{full_name}")
 print(f"{message}")

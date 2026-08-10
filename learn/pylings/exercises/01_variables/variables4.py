@@ -17,15 +17,15 @@ Uncomment and complete each section to pass all tests.
 
 # TODO: Assign a positive integer value
 # TODO: 赋一个正整数值
-revenue = __  
+revenue = 10
 
 # TODO: Assign a non-negative integer value
 # TODO: 赋一个非负整数值
-cost = __
+cost = 2
 
 # TODO: Calculate profit (revenue - cost)
 # TODO: 计算利润（收入 - 成本）
-profit = __ 
+profit = revenue - cost
 
 # === STRING MULTIPLICATION FOR VISUALIZATION ===
 # === 字符串乘法可视化 ===
@@ -34,11 +34,11 @@ profit = __
 
 # TODO: Scale cost proportionally using '#' * (cost / revenue) * 25
 # TODO: 使用 '#' * (cost / revenue) * 25 按比例缩放成本
-cost_bar = __ 
+cost_bar = '#' * int((cost / revenue) * 25)
 
 # TODO: Scale profit proportionally using '#' * (profit / revenue) * 25
 # TODO: 使用 '#' * (profit / revenue) * 25 按比例缩放利润
-profit_bar = __
+profit_bar = '#' * int((profit / revenue) * 25)
 
 # === TESTS ===
 # === 测试 ===
