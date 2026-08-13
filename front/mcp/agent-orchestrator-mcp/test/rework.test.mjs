@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 import { createTask, writeTaskResult } from '../dist/server/base/task-store/index.js'
-import { requestRework } from '../dist/server/feature/orchestrator/rework.js'
+import { requestRework } from '../dist/server/feature/orchestrator/request-rework/rework.js'
 
 test('requestRework updates task and writes rework prompt for reopening chat', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-rework-'))
@@ -24,5 +24,5 @@ test('requestRework updates task and writes rework prompt for reopening chat', a
   assert.equal(updated.status, 'rework_requested')
   assert.equal(updated.reworkCount, 1)
   assert.equal(updated.reviewNote, '缺少边界场景分析')
-  assert.equal(updated.error, '缺少边界场景分析')
+  assert.equal(updated.error, undefined)
 })

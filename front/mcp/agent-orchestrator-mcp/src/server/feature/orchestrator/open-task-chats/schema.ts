@@ -2,7 +2,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js'
 
 export const agentOpenTaskChatsTool: Tool = {
   name: 'agent_open_task_chats',
-  description: '为多个任务生成 prompt 文件并打开 Copilot Chat 子窗口。仅负责打开窗口，不读取聊天输出。',
+  description: '加载任务的 spec 文件与 prompt（含返工原因），通过 VS Code CLI 打开子聊天窗口。仅负责打开窗口，不读取聊天输出。',
   inputSchema: {
     type: 'object',
     properties: {

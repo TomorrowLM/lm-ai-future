@@ -29,7 +29,7 @@ which can be of different data types:
 
 # TODO: Initialize a list of fruits with "apple", "banana" and "cherry"
 # TODO: 初始化一个包含 "apple"、"banana" 和 "cherry" 的水果列表
-fruits = []
+fruits = ["apple", "banana", "cherry"]
 
 # DO NOT TOUCH
 # 请勿修改
@@ -38,7 +38,7 @@ assert fruits == ["apple", "banana", "cherry"], f"Expected ['apple', 'banana', '
 # TODO: Append a "pineapple" to the list
 # TODO: 向列表追加一个 "pineapple"
 
-fruits.append()
+fruits.append("pineapple")
 
 # DO NOT TOUCH
 # 请勿修改
@@ -46,7 +46,7 @@ assert fruits == ["apple", "banana", "cherry", "pineapple"], f"Expected ['apple'
 
 # TODO: Insert "elderflower" into index 3 of fruits
 # TODO: 将 "elderflower" 插入到 fruits 列表的索引 3 位置
-fruits.insert()
+fruits.insert(3, "elderflower")
 
 # DO NOT TOUCH
 # 请勿修改
@@ -54,7 +54,7 @@ assert fruits == ["apple", "banana", "cherry", "elderflower", "pineapple"], f"Ex
 
 # TODO: Pop the second index from fruitslist
 # TODO: 从 fruits 列表中弹出索引为 2 的元素
-popped_fruit = fruits.pop()
+popped_fruit = fruits.pop(1)
 
 # DO NOT TOUCH
 # 请勿修改
@@ -63,7 +63,7 @@ assert fruits == ["apple", "cherry", "elderflower", "pineapple"], f"Expected ['a
 
 # TODO: Remove a fruit "elderflower"
 # TODO: 移除水果 "elderflower"
-fruits.remove()
+fruits.remove("elderflower")
 
 assert fruits == ["apple", "cherry", "pineapple"], f"Expected ['apple', 'cherry', 'pineapple'], but got {fruits}"
 

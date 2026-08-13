@@ -9,6 +9,8 @@ import {
 import { loadDocument } from "../src/server/base/swagger/analys/loader.js";
 import {
   DEFAULT_SWAGGER_SOURCE,
+  DSB_API_SWAGGER_SOURCE,
+  resolveSwaggerSource,
   SWAGGER_CANDIDATE_PATHS,
   SWAGGER_NETWORK_TIMEOUT_MS,
   SWAGGER_QUERY_DEFAULTS,
@@ -30,6 +32,17 @@ test("Swagger runtime strategy values come from the public config module", () =>
   assert.equal(
     swaggerGetModelInputSchema.properties.source.default,
     DEFAULT_SWAGGER_SOURCE,
+  );
+});
+
+test("relative API paths select the matching Swagger document source", () => {
+  assert.equal(
+    resolveSwaggerSource("/dsb/yqarw/api/urban/roles/list"),
+    DEFAULT_SWAGGER_SOURCE,
+  );
+  assert.equal(
+    resolveSwaggerSource("/dsb/api/szt/urban/roles/list"),
+    DSB_API_SWAGGER_SOURCE,
   );
 });
 

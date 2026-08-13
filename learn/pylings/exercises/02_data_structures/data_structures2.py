@@ -29,7 +29,7 @@ which can be of different data types:
 
 # TODO: Initialize a tuple of programming languages with "Python", "Java", "Rust", and "C++"
 # TODO: 初始化一个包含 "Python"、"Java"、"Rust" 和 "C++" 的编程语言元组
-languages = ()
+languages = ("Python", "Java", "Rust", "C++")
 
 
 # DO NOT TOUCH
@@ -39,7 +39,7 @@ print(f"Languages: {languages}")
 
 # TODO: Access the third item in the tuple, remember 0 indexed
 # TODO: 访问元组中的第三个元素，记住是从 0 开始索引的
-second_language = languages[]
+second_language = languages[2]
 
 # DO NOT TOUCH
 # 请勿修改
@@ -48,7 +48,7 @@ print(f"Second Language: {second_language}")
 
 # TODO: Create a new tuple by adding "JavaScript" to the existing tuple, a well placed `,` could help here
 # TODO: 通过向现有元组添加 "JavaScript" 来创建一个新元组，合理放置 `,` 可能会有所帮助
-new_languages = languages + ()
+new_languages = languages + ("JavaScript",)
 
 # DO NOT TOUCH
 # 请勿修改
@@ -57,7 +57,7 @@ print(f"New languages: {new_languages}")
 
 # TODO: Create a new tuple by inserting "Ruby" at index 4, 
 # TODO: 通过在索引 4 处插入 "Ruby" 来创建一个新元组
-new_languages_with_ruby = new_languages[] + () + new_languages[]
+new_languages_with_ruby = new_languages[:4] + ("Ruby",) + new_languages[4:]
 
 # DO NOT TOUCH
 # 请勿修改
@@ -66,7 +66,7 @@ print(f"New languages with ruby: {new_languages_with_ruby}")
 
 # TODO: Create a new tuple by removing the second item
 # TODO: 通过移除第二个元素来创建一个新元组
-new_languages_without_second = new_languages[] + new_languages[]
+new_languages_without_second = new_languages[:1] + new_languages[2:]
 
 # DO NOT TOUCH
 # 请勿修改

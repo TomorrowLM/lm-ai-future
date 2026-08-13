@@ -16,6 +16,5 @@ export async function requestRework(workspaceRoot: string, taskId: string, reaso
     status: 'rework_requested',
     reworkCount,
     reviewNote: reason,
-    error: reason,
   })
 }

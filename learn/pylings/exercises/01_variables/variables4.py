@@ -34,6 +34,8 @@ profit = revenue - cost
 
 # TODO: Scale cost proportionally using '#' * (cost / revenue) * 25
 # TODO: 使用 '#' * (cost / revenue) * 25 按比例缩放成本
+print((cost / revenue) * 25)
+
 cost_bar = '#' * int((cost / revenue) * 25)
 
 # TODO: Scale profit proportionally using '#' * (profit / revenue) * 25

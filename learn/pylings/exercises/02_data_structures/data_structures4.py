@@ -25,7 +25,7 @@ item_list = ["item1", "item2", "item3", "item1", "item4", "item2", "item5"]
 
 # TODO: Convert the list to a set to remove duplicates
 # TODO: 将列表转换为集合以去除重复项
-unique_items = set()
+unique_items = set(item_list)
 
 # DO NOT TOUCH
 # 请勿修改
@@ -34,7 +34,7 @@ print(f"Unique items: {unique_items}")
 
 # TODO: Add a new item "item6" to the set
 # TODO: 向集合添加新元素 "item6"
-unique_items.add()
+unique_items.add("item6")
 
 # DO NOT TOUCH
 # 请勿修改
@@ -43,7 +43,7 @@ print(f"Items after adding 'item6': {unique_items}")
 
 # TODO: Remove the item "item4" from the set
 # TODO: 从集合中移除元素 "item4"
-unique_items.remove()
+unique_items.remove("item4")
 
 # DO NOT TOUCH
 # 请勿修改
@@ -52,7 +52,7 @@ print(f"Items after removing 'item4': {unique_items}")
 
 # TODO: Find the difference between `unique_items` and a set of {"item2", "item5"}
 # TODO: 找出 `unique_items` 与集合 {"item2", "item5"} 的差集
-remaining_items = unique_items.difference()
+remaining_items = unique_items.difference({"item2", "item5"})
 
 # DO NOT TOUCH
 # 请勿修改

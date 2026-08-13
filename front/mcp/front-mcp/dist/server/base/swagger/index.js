@@ -1,7 +1,7 @@
 import { server } from "../../../server-instance.js";
 import { getSchemasRoot, isValidSpec, loadDocument, } from "../../../server/base/swagger/analys/index.js";
 import { parseFragment, buildCandidateUrls, tryFetchJson, } from "../../../server/base/swagger/analys/url-parser.js";
-import { DEFAULT_SWAGGER_SOURCE, SWAGGER_NETWORK_TIMEOUT_MS, } from "../../../server/base/swagger/config/index.js";
+import { DEFAULT_SWAGGER_SOURCE, resolveSwaggerSource, SWAGGER_NETWORK_TIMEOUT_MS, } from "../../../server/base/swagger/config/index.js";
 import { querySwaggerDocument } from "../../../server/base/swagger/query.js";
 import { swaggerGetModelInputSchema } from "../../../server/base/swagger/schema.js";
 import { findOperationByKeyword } from "../../../server/base/swagger/utils/index.js";
@@ -16,8 +16,8 @@ export const swaggerGetModelTool = {
  * 通过 swagger-resources 发现所有分组，逐个加载文档并用关键词匹配
  * @returns 匹配到的文档和 operationId，未找到返回 undefined
  */
-async function searchAcrossGroups(apiPath) {
-    const candidateInfo = buildCandidateUrls(DEFAULT_SWAGGER_SOURCE);
+async function searchAcrossGroups(apiPath, swaggerSource) {
+    const candidateInfo = buildCandidateUrls(swaggerSource);
     if (!candidateInfo)
         return undefined;
     const { baseUrl } = candidateInfo;
@@ -56,8 +56,11 @@ export async function handleSwaggerGetModelTool(request) {
     const source = typeof args.source === "string" ? args.source : "";
     // 相对 API 路径（以 / 开头且不含 #）：回退到默认源加载文档，用路径匹配操作
     const isApiPath = source.startsWith('/') && !source.includes('#');
+    const swaggerSource = isApiPath
+        ? resolveSwaggerSource(source)
+        : DEFAULT_SWAGGER_SOURCE;
     if (isApiPath) {
-        args.source = DEFAULT_SWAGGER_SOURCE;
+        args.source = swaggerSource;
         if (!args.name) {
             args.name = source;
         }
@@ -68,7 +71,7 @@ export async function handleSwaggerGetModelTool(request) {
     if (isApiPath) {
         const initialResult = querySwaggerDocument({ doc, args, fragment });
         if (initialResult?.error) {
-            const crossGroupResult = await searchAcrossGroups(source);
+            const crossGroupResult = await searchAcrossGroups(source, swaggerSource);
             if (crossGroupResult) {
                 doc = crossGroupResult.doc;
                 args.operationId = crossGroupResult.operationId;
