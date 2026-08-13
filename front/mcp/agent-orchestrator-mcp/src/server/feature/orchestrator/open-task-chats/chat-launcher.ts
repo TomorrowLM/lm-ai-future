@@ -22,6 +22,10 @@ async function resolveCodeCli() {
  * 返工任务额外附带审查意见，避免子 Agent 照原 spec 重做。
  */
 function buildInstruction(task: TaskRecord, specFile: string): string {
+  if (task.status === 'rework_requested' && task.rework?.prompt) {
+    return task.rework.prompt
+  }
+
   const lines = [`请严格执行 spec 文件 ${specFile}。`]
 
   if (task.prompt?.trim()) {
@@ -57,8 +61,13 @@ export async function openTaskChat(task: TaskRecord) {
     '--reuse-window',
     '--add-file',
     specFile,
-    buildInstruction(task, specFile),
   ]
+
+  if (task.status === 'rework_requested' && task.rework?.promptFile) {
+    args.push('--add-file', task.rework.promptFile)
+  }
+
+  args.push(buildInstruction(task, specFile))
 
   const codeCli = await resolveCodeCli()
   const child = spawn(codeCli, args, {

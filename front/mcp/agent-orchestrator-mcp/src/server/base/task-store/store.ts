@@ -2,7 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { assertSafeWorkspaceRoot, resolveInsideWorkspace } from './path-guard.js'
-import type { CreateTaskInput, TaskRecord, TaskStatus, TaskStoreData } from './types.js'
+import type {
+  CreateTaskInput,
+  TaskRecord,
+  TaskReworkRecord,
+  TaskStatus,
+  TaskStoreData,
+} from './types.js'
 
 const storeDirName = 'docs'
 const tasksFileName = 'tasks.json'
@@ -265,7 +271,22 @@ export async function writeTaskResult(workspaceRoot: string, taskId: string, res
   const now = new Date().toISOString()
   await mkdir(path.dirname(task.resultFile), { recursive: true })
   await writeFile(task.resultFile, result, 'utf8')
-  return updateTask(workspaceRoot, taskId, { status: 'completed', completedAt: now })
+
+  const patch: Partial<TaskRecord> = { status: 'completed', completedAt: now }
+
+  if (task.rework) {
+    const completedRework: TaskReworkRecord = {
+      ...task.rework,
+      status: 'completed',
+      completedAt: now,
+    }
+    patch.rework = completedRework
+    patch.reworks = (task.reworks ?? []).map((item) => (
+      item.id === completedRework.id ? completedRework : item
+    ))
+  }
+
+  return updateTask(workspaceRoot, taskId, patch)
 }
 
 export async function readTaskResult(workspaceRoot: string, taskId: string) {

@@ -9,6 +9,19 @@ export const taskStatuses = [
 
 export type TaskStatus = typeof taskStatuses[number]
 
+export type TaskReworkStatus = 'requested' | 'running' | 'completed'
+
+export interface TaskReworkRecord {
+  id: string
+  reason: string
+  prompt: string
+  promptFile: string
+  status: TaskReworkStatus
+  createdAt: string
+  startedAt?: string
+  completedAt?: string
+}
+
 export interface TaskRecord {
   id: string
   title: string
@@ -23,6 +36,8 @@ export interface TaskRecord {
   startedAt?: string
   completedAt?: string
   reworkCount?: number
+  rework?: TaskReworkRecord
+  reworks?: TaskReworkRecord[]
   error?: string
   reviewNote?: string
 }

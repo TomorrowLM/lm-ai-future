@@ -21,9 +21,28 @@ export async function handleAgentOpenTaskChats(args: ToolArguments): Promise<Cal
     }
 
     opened.push(await openTaskChat(task))
+    const now = new Date().toISOString()
+    const patch = {
+      status: 'running' as const,
+      startedAt: now,
+    }
+
+    if (task.rework) {
+      const runningRework = {
+        ...task.rework,
+        status: 'running' as const,
+        startedAt: now,
+      }
+      Object.assign(patch, {
+        rework: runningRework,
+        reworks: (task.reworks ?? []).map((item) => (
+          item.id === runningRework.id ? runningRework : item
+        )),
+      })
+    }
+
     await updateTask(workspaceRoot, taskId, {
-      status: 'running',
-      startedAt: new Date().toISOString(),
+      ...patch,
     })
   }
 
