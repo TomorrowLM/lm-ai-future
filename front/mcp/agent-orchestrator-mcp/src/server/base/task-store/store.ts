@@ -203,7 +203,7 @@ export async function createTask(input: CreateTaskInput) {
   const task: TaskRecord = {
     id,
     title: input.title,
-    prompt: input.prompt,
+    prompt: input.prompt ?? '',
     workspaceRoot,
     inputFiles,
     resultFile,
@@ -314,9 +314,36 @@ export async function hasTaskResult(task: TaskRecord) {
 
 export async function syncCompletedTaskFromResult(workspaceRoot: string, task: TaskRecord) {
   if (task.status !== 'running' && task.status !== 'pending') return task
-  if (!(await hasTaskResult(task))) return task
-  return updateTask(workspaceRoot, task.id, {
-    status: 'completed',
-    completedAt: new Date().toISOString(),
-  })
+
+  let resultStat
+  try {
+    resultStat = await stat(task.resultFile)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return task
+    throw error
+  }
+
+  if (!resultStat.isFile() || resultStat.size === 0) return task
+
+  const currentRunStartedAt = Date.parse(task.startedAt ?? task.createdAt)
+  if (Number.isFinite(currentRunStartedAt) && resultStat.mtimeMs < currentRunStartedAt) {
+    return task
+  }
+
+  const completedAt = new Date().toISOString()
+  const patch: Partial<TaskRecord> = { status: 'completed', completedAt }
+
+  if (task.rework) {
+    const completedRework: TaskReworkRecord = {
+      ...task.rework,
+      status: 'completed',
+      completedAt,
+    }
+    patch.rework = completedRework
+    patch.reworks = (task.reworks ?? []).map((item) => (
+      item.id === completedRework.id ? completedRework : item
+    ))
+  }
+
+  return updateTask(workspaceRoot, task.id, patch)
 }

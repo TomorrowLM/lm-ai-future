@@ -30,10 +30,10 @@ flowchart LR
 	MCP --> Dispatcher[Tool Dispatcher]
 	Dispatcher --> Orchestrator[Orchestrator Tools]
 	Orchestrator --> Store[Task Store]
-	Orchestrator --> Prompt[Prompt Writer]
+	Orchestrator --> Rework[Rework Writer]
 	Orchestrator --> CodeCLI[VS Code CLI]
 	Store --> Json[(docs/design/xx/tasks.json)]
-	Prompt --> PromptFiles[(docs/design/xx/prompts/*.md)]
+	Rework --> ReworkFiles[(docs/design/xx/reworks/*.md)]
 	Orchestrator --> ResultFiles[(docs/design/xx/results/*.md)]
 	CodeCLI --> SubChat[Copilot Chat 子窗口]
 	SubChat --> ResultFiles
@@ -61,9 +61,8 @@ flowchart LR
 		design/
 			xx/
 				tasks.json              # 任务列表和状态记录
-				prompts/
-					task-<uuid>.md          # 子 Agent 初始执行 Prompt
-					task-<uuid>.rework-1.md # 子 Agent 返工 Prompt
+					reworks/
+						task-<uuid>-rework-1.md # 返工要求文档
 				results/
 					task-<uuid>.md          # 子 Agent 结果文件
 ```
@@ -79,7 +78,7 @@ flowchart LR
 | `reviewed` | 主 Agent 已审查该任务结果。 |
 | `rework_requested` | 主 Agent 要求子任务返工。 |
 
-任务记录中还会保存 `promptFile`、`resultFile`、`reviewNote`、`reworkCount` 等字段。返工时 `promptFile` 会更新为最新的 `task-<uuid>.rework-N.md`。
+任务记录中还会保存 `inputFiles`、`resultFile`、`reviewNote`、`reworkCount` 等字段。返工记录使用独立的 `prompt` 作为子任务说明，并通过 `rework.inputFiles` 挂载返工要求文档。
 
 ### MCP 工具
 
@@ -116,12 +115,12 @@ flowchart LR
 
 主 Agent 调用 `agent_open_task_chats` 后，服务端会：
 
-1. 为每个任务生成同一需求目录下的 `prompts/task-<uuid>.md`；
-2. 通过 VS Code CLI 执行 `code chat --mode agent --reuse-window --maximize --add-file <promptFile>`；
+1. 合并任务的 `inputFiles` 与当前返工的 `rework.inputFiles`；
+2. 通过 VS Code CLI 为每个输入文件追加 `--add-file <inputFile>`；
 3. 将任务状态更新为 `running`；
-4. 返回任务 ID、Prompt 文件路径、结果文件路径和使用的 `codeCli`。
+4. 返回任务 ID 和结果文件路径。
 
-子聊天窗口中的 Agent 只处理当前任务，并按照 Prompt 中的完成协议写入结果。
+子聊天窗口中的 Agent 读取已挂载输入文件，并按照任务的独立 `prompt` 完成执行和结果写入。
 
 ### 3. 子 Agent 执行并提交结果
 
@@ -148,7 +147,7 @@ flowchart LR
 1. 使用 `agent_read_task_result` 读取单个任务结果；
 2. 使用 `agent_summarize_results` 合并多个任务结果；
 3. 审查通过后调用 `agent_mark_task_reviewed`；
-4. 结果不合格时调用 `agent_request_rework`，写入返工原因并生成返工 Prompt。
+4. 结果不合格时调用 `agent_request_rework`，写入返工原因并生成返工要求文档。
 
 ### 6. 返工流程
 
@@ -165,12 +164,12 @@ flowchart LR
 服务端会：
 
 1. 将任务状态更新为 `rework_requested`；
-2. 将 `reviewNote` / `error` 写为返工原因；
+2. 将 `reviewNote` 写为返工原因；
 3. 将 `reworkCount` 加 1；
-4. 生成同一需求目录下的 `prompts/task-<uuid>.rework-N.md`；
-5. 把任务记录里的 `promptFile` 更新为最新返工 Prompt。
+4. 生成同一需求目录下的 `reworks/task-<uuid>-rework-N.md`；
+5. 将返工文档写入 `rework.inputFiles`，并生成一条简短独立的 `rework.prompt`。
 
-随后主 Agent 再调用 `agent_open_task_chats`，服务端会使用最新 `promptFile` 打开新的子聊天窗口。子 Agent 读取上次结果文件，按返工意见修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
+随后主 Agent 再调用 `agent_open_task_chats`，服务端会同时挂载原任务输入文件与当前 `rework.inputFiles`，并把 `rework.prompt` 作为子任务指令。子 Agent 按返工文档修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
 
 推荐主窗口口令：
 

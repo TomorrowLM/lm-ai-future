@@ -8,5 +8,6 @@ export async function handleAgentRequestRework(args: ToolArguments): Promise<Cal
     requireString(args, 'workspaceRoot'),
     requireString(args, 'taskId'),
     requireString(args, 'reason'),
+    requireString(args, 'reworkFile'),
   ))
 }

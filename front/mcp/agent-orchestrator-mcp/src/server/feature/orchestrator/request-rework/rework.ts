@@ -2,66 +2,18 @@ import {
   getTask,
   updateTask,
 } from '../../../base/task-store/index.js'
-import { mkdir, writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import type { TaskRecord, TaskReworkRecord } from '../../../base/task-store/index.js'
 
-const requirementSections = ['design', 'prod']
+/**
+ * 返工文档模板由 page-development-workflow 技能定义：
+ * lm-skill/page-development-workflow/references/phase4-execution-modes.md → 返工文档模板
+ *
+ * Agent 负责按模板写入返工文档，再调用本函数传入 reworkFile 路径。
+ * MCP 只更新 tasks.json 状态账本，不生成任何文档内容。
+ */
+const reworkInstruction = '请读取已挂载的原始任务输入文件和本次返工输入文件，严格按返工要求补齐实现。完成后覆盖原 resultFile，并调用 agent_complete_task。'
 
-function pathSegments(targetPath: string) {
-  return path.normalize(targetPath).split(path.sep).filter(Boolean)
-}
-
-function requirementDirFromPath(targetPath: string) {
-  const normalized = path.normalize(targetPath)
-  const parts = pathSegments(normalized)
-
-  for (const section of requirementSections) {
-    const sectionIndex = parts.findIndex((part, index) => (
-      parts[index - 1] === 'docs' && part === section
-    ))
-
-    if (sectionIndex >= 0 && parts[sectionIndex + 1]) {
-      return path.join(path.parse(normalized).root, ...parts.slice(0, sectionIndex + 2))
-    }
-  }
-
-  return path.join(taskWorkspaceRoot(targetPath), 'docs')
-}
-
-function taskWorkspaceRoot(targetPath: string) {
-  const parts = pathSegments(targetPath)
-  const docsIndex = parts.findIndex((part) => part === 'docs')
-
-  if (docsIndex > 0) return path.join(path.parse(targetPath).root, ...parts.slice(0, docsIndex))
-
-  return path.dirname(targetPath)
-}
-
-function buildReworkPrompt(task: TaskRecord, reason: string) {
-  const lines = [
-    `请对任务 ${task.id} 进行返工。`,
-    '',
-    `任务标题：${task.title}`,
-    '',
-    '原始任务要求：',
-    task.prompt,
-    '',
-    '返工原因：',
-    reason,
-    '',
-    '输入文件：',
-    ...task.inputFiles.map((item) => `- ${item}`),
-    '',
-    `结果文件：${task.resultFile}`,
-    '',
-    '请基于当前结果补齐返工要求，完成后覆盖原 resultFile，并调用 agent_complete_task。',
-  ]
-
-  return lines.join('\n')
-}
-
-export async function requestRework(workspaceRoot: string, taskId: string, reason: string) {
+export async function requestRework(workspaceRoot: string, taskId: string, reason: string, reworkFile: string) {
   const task = await getTask(workspaceRoot, taskId)
 
   if (!task) {
@@ -71,20 +23,14 @@ export async function requestRework(workspaceRoot: string, taskId: string, reaso
   const reworkCount = (task.reworkCount ?? 0) + 1
   const now = new Date().toISOString()
   const reworkId = `rework-${reworkCount}`
-  const reworkDir = path.join(requirementDirFromPath(task.resultFile), 'reworks')
-  const promptFile = path.join(reworkDir, `${task.id}-${reworkId}.md`)
-  const prompt = buildReworkPrompt(task, reason)
   const rework: TaskReworkRecord = {
     id: reworkId,
     reason,
-    prompt,
-    promptFile,
+    prompt: reworkInstruction,
+    inputFiles: [reworkFile],
     status: 'requested',
     createdAt: now,
   }
-
-  await mkdir(reworkDir, { recursive: true })
-  await writeFile(promptFile, prompt, 'utf8')
 
   return updateTask(workspaceRoot, taskId, {
     status: 'rework_requested',

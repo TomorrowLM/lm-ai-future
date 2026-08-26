@@ -6,7 +6,7 @@ import { textResponse } from '../../../../utils/text.js'
 function toCreateTaskInput(args: ToolArguments): CreateTaskInput {
   return {
     title: requireString(args, 'title'),
-    prompt: requireString(args, 'prompt'),
+    prompt: optionalString(args, 'prompt'),
     workspaceRoot: requireString(args, 'workspaceRoot'),
     inputFiles: optionalStringArray(args, 'inputFiles'),
     resultFile: optionalString(args, 'resultFile'),

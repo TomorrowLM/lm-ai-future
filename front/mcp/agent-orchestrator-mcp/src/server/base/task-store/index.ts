@@ -1,6 +1,7 @@
 export type {
   CreateTaskInput,
   TaskRecord,
+  TaskReworkRecord,
   TaskStatus,
   TaskStoreData,
 } from './types.js'

@@ -17,16 +17,14 @@ async function resolveCodeCli() {
 }
 
 /**
- * 构造子聊天窗口指令：加载 spec 文件 + 任务 prompt + 返工原因。
- * 任务 prompt 含依赖文件、允许修改范围、特殊约束等关键规则，必须传给子 Agent；
- * 返工任务额外附带审查意见，避免子 Agent 照原 spec 重做。
+ * 构造子聊天窗口的独立执行说明。
  */
-function buildInstruction(task: TaskRecord, specFile: string): string {
+export function buildInstruction(task: TaskRecord): string {
   if (task.status === 'rework_requested' && task.rework?.prompt) {
     return task.rework.prompt
   }
 
-  const lines = [`请严格执行 spec 文件 ${specFile}。`]
+  const lines = ['请严格执行已挂载的任务输入文件。']
 
   if (task.prompt?.trim()) {
     lines.push('', '任务要求：', task.prompt)
@@ -47,11 +45,20 @@ function buildInstruction(task: TaskRecord, specFile: string): string {
   return lines.join('\n')
 }
 
-export async function openTaskChat(task: TaskRecord) {
-  const specFile = task.inputFiles[0]
+export function resolveTaskInputFiles(task: TaskRecord): string[] {
+  const legacyReworkFile = task.rework?.promptFile ? [task.rework.promptFile] : []
+  const reworkInputFiles = task.status === 'rework_requested'
+    ? (task.rework?.inputFiles ?? legacyReworkFile)
+    : []
 
-  if (!specFile) {
-    throw new Error(`任务 ${task.id} 没有关联的 spec 文件`)
+  return [...new Set([...task.inputFiles, ...reworkInputFiles])]
+}
+
+export async function openTaskChat(task: TaskRecord) {
+  const inputFiles = resolveTaskInputFiles(task)
+
+  if (inputFiles.length === 0) {
+    throw new Error(`任务 ${task.id} 没有关联的输入文件`)
   }
 
   const args = [
@@ -59,15 +66,13 @@ export async function openTaskChat(task: TaskRecord) {
     '--mode',
     'agent',
     '--reuse-window',
-    '--add-file',
-    specFile,
   ]
 
-  if (task.status === 'rework_requested' && task.rework?.promptFile) {
-    args.push('--add-file', task.rework.promptFile)
+  for (const inputFile of inputFiles) {
+    args.push('--add-file', inputFile)
   }
 
-  args.push(buildInstruction(task, specFile))
+  args.push(buildInstruction(task))
 
   const codeCli = await resolveCodeCli()
   const child = spawn(codeCli, args, {
@@ -84,6 +89,10 @@ export async function openTaskChat(task: TaskRecord) {
   })
 
   child.unref()
+
+  // 等待 VS Code CLI 将命令送达主进程并完成 newChat，
+  // 避免连续打开多个任务时因并发竞态被合并进同一会话
+  await new Promise<void>((resolve) => setTimeout(resolve, 800))
 
   return { taskId: task.id, resultFile: task.resultFile }
 }

@@ -6,7 +6,7 @@ import { textResponse } from '../../../../utils/text.js'
 export async function handleAgentCreateTask(args: ToolArguments): Promise<CallToolResult> {
   const input: CreateTaskInput = {
     title: requireString(args, 'title'),
-    prompt: requireString(args, 'prompt'),
+    prompt: optionalString(args, 'prompt'),
     workspaceRoot: requireString(args, 'workspaceRoot'),
     inputFiles: optionalStringArray(args, 'inputFiles'),
     resultFile: optionalString(args, 'resultFile'),

@@ -17,10 +17,13 @@ Complete each section to pass all tests.
 # TODO: 修改函数 greet()，使其不接受任何参数并返回字符串 "Hello, World!"
 
 def greet():
-    pass
+    return "Hello, World!"
+    # pass
 
 # TODO: Define a function called farewell, that takes no argument and returns the string "Goodbye!"
 # TODO: 定义一个名为 farewell 的函数，不接受任何参数，返回字符串 "Goodbye!"
+def farewell():
+    return "Goodbye!"
 
 # === TESTS ===
 # === 测试 ===
