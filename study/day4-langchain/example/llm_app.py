@@ -1,8 +1,16 @@
 # pip install --upgrade  openai langchain langchain-openai langchain_community
+import os
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-model = ChatOpenAI(model="gpt-4")
+import core.config
+
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 messages = [
     SystemMessage(content="将以下内容从英语翻译成中文"),
     HumanMessage(content="Apple"),

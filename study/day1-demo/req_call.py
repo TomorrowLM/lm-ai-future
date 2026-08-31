@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-from learn.config import *
+import core.config
 
 url = os.getenv("DEEPSEEK_BASE_URL") + "/chat/completions"
 payload = json.dumps({
