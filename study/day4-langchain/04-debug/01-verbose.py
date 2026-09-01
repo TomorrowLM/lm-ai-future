@@ -4,9 +4,15 @@ from langchain.agents import AgentExecutor, create_tool_calling_agent
 #setx TAVILY_API_KEY "your-api-key"
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.globals import set_verbose
+from langchain_core.globals import set_verbose
+import os
+import core.config
 
-llm = ChatOpenAI(model="gpt-4o")
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 tools = [TavilySearchResults(max_results=1)]
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -20,7 +26,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 # 构建工具代理
-agent = create_tool_calling_agent(llm, tools, prompt)
+agent = create_tool_calling_agent(model, tools, prompt)
 # 打印详细日志
 set_verbose(True)
 # 通过传入代理和工具来创建代理执行器
