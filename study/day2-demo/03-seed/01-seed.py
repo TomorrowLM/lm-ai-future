@@ -1,6 +1,6 @@
 import os
 from openai import OpenAI
-from learn.config import *
+from core.config import *
 
 client = OpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
