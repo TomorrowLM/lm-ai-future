@@ -3,8 +3,14 @@ import asyncio
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+import os
+import core.config
 
-model = ChatOpenAI(model="gpt-4")
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 parser = StrOutputParser()
 chain = (
         model | JsonOutputParser()

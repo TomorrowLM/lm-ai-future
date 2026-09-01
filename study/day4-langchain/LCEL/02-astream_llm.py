@@ -1,8 +1,13 @@
 from langchain_openai import ChatOpenAI
 import asyncio
+import os
+import core.config
 
-model = ChatOpenAI(model="gpt-4")
-
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 
 # 异步流处理
 async def async_stream():

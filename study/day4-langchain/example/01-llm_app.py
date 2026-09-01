@@ -1,9 +1,7 @@
 # pip install --upgrade  openai langchain langchain-openai langchain_community
-import os
-
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
-
+import os
 import core.config
 
 model = ChatOpenAI(
