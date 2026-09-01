@@ -1,6 +1,6 @@
 from openai import OpenAI
 import os
-from learn.config import *
+import core.config
 
 # 初始化 DeepSeek 服务（兼容 OpenAI SDK）
 client = OpenAI(
