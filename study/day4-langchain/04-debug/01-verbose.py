@@ -1,5 +1,5 @@
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 #pip install -U langchain-community tavily-python
 #setx TAVILY_API_KEY "your-api-key"
 from langchain_community.tools.tavily_search import TavilySearchResults

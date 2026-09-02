@@ -1,11 +1,17 @@
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.globals import set_debug
-from langchain.globals import set_verbose
+from langchain_core.globals import set_debug
+from langchain_core.globals import set_verbose
+import os
+import core.config
 
-llm = ChatOpenAI(model="gpt-4o")
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 tools = [TavilySearchResults(max_results=1)]
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -19,7 +25,7 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 # 构建工具代理
-agent = create_tool_calling_agent(llm, tools, prompt)
+agent = create_tool_calling_agent(model, tools, prompt)
 # 打印调试日志
 set_debug(True)
 # 不输出详细日志
