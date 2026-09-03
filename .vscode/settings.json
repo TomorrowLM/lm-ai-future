@@ -4,6 +4,6 @@
     "code-runner.executorMap": {
         "python": "$workspaceRoot/.venv/bin/python -u $fullFileName"
     },
-    "code-runner.runInTerminal": false,
+    "code-runner.runInTerminal": true,
     "code-runner.fileDirectoryAsCwd": true
 }

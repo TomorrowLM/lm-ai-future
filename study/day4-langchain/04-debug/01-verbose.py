@@ -14,6 +14,9 @@ model = ChatOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
 )
 tools = [TavilySearchResults(max_results=1)]
+# search = tools[0]
+# result = search.invoke({"query": "LangChain LCEL 是什么"})
+# print(result)
 prompt = ChatPromptTemplate.from_messages(
     [
         (
