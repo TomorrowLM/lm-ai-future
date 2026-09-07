@@ -1,7 +1,7 @@
 from langchain_chroma import Chroma
 from langchain_core.example_selectors import SemanticSimilarityExampleSelector
 from langchain_core.prompts import PromptTemplate
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # 先安装Visual C++ 14.0，如果install没有报错，需要先执行pip uninstall langchain-chroma
 # 再执行pip install langchain-chroma
@@ -65,7 +65,7 @@ example_selector = SemanticSimilarityExampleSelector.from_examples(
     # 这是可供选择的示例列表。
     examples,
     # 这是用于生成嵌入的嵌入类，用于衡量语义相似性。
-    OpenAIEmbeddings(),
+    HuggingFaceEmbeddings(model_name="BAAI/bge-small-zh-v1.5"),
     # 这是用于存储嵌入并进行相似性搜索的 VectorStore 类。
     Chroma,
     # 这是要生成的示例数量。
