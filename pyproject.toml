@@ -15,11 +15,14 @@ dependencies = [
     "langchain-community>=0.4.2",
     "langchain-huggingface>=1.2.2",
     "langchain-openai>=1.6.0",
+    "langserve[server]>=0.3.1",
     "openai>=2.48.0",
+    "pydantic>=2.7.4",
     "python-dotenv>=1.2.2",
     "requests>=2.34.2",
     "sentence-transformers>=6.0.1",
     "tiktoken>=0.13.0",
+    "uvicorn>=0.23.2",
 ]
 
 [tool.setuptools.packages.find]
