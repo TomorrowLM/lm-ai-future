@@ -1,0 +1,19 @@
+[project]
+name = "front-automation-mcp"
+version = "0.1.0"
+description = "AI-assisted browser inspection and automation MCP"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=1.6.0,<2",
+  "playwright>=1.50.0",
+  "pydantic>=2.7.0",
+]
+
+[project.scripts]
+front-automation-mcp = "server:main"
+
+[tool.setuptools]
+py-modules = ["server", "browser", "models"]
+
+[tool.setuptools.packages.find]
+include = ["front_automation_mcp*"]
