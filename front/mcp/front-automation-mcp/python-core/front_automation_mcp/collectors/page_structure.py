@@ -8,6 +8,7 @@ async def collect_page_structure(session: Any, page: Any, screenshot_path: str |
     readiness = await session.wait_until_ready(page)
     if not readiness.get("ready"):
         return {"collectionStatus": "blocked-unready", "readiness": readiness}
+    scroll_to_top_evidence = await session.scroll_to_top(page)
     scroll = await session.scroll_all(page, max_rounds=max_scroll_rounds)
     snapshot = await session.snapshot(page, screenshot_path)
     navigation = await session.enumerate_navigation(page)
@@ -18,6 +19,7 @@ async def collect_page_structure(session: Any, page: Any, screenshot_path: str |
         "route": snapshot["route"],
         "title": snapshot["title"],
         "scroll": scroll,
+        "scrollToTop": scroll_to_top_evidence,
         "navigation": navigation,
         "dom": {
             "text": snapshot["domText"],

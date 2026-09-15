@@ -116,6 +116,18 @@ class DomCandidateClassificationTests(unittest.TestCase):
         self.assertEqual(browser.classify_dom_candidate("span", None, "textBtn"), "button")
         self.assertIn(".textBtn", browser.INTERACTIVE_CANDIDATE_SELECTOR)
 
+    def test_common_action_class_variants_are_classified_and_collected(self) -> None:
+        self.assertEqual(browser.classify_dom_candidate("span", None, "deleteBtn axisY"), "button")
+        self.assertEqual(browser.classify_dom_candidate("span", None, "axisY2"), "button")
+        self.assertIn("[class*='deleteBtn'", browser.INTERACTIVE_CANDIDATE_SELECTOR)
+        self.assertIn("[class*='axisY2'", browser.INTERACTIVE_CANDIDATE_SELECTOR)
+
+    def test_candidate_collection_has_a_generic_behavior_fallback(self) -> None:
+        from front_automation_mcp import config
+
+        self.assertIn("element.onclick", config.CANDIDATE_EVALUATOR)
+        self.assertIn("cursor", config.CANDIDATE_EVALUATOR)
+
     def test_overlay_classification_accepts_non_standard_overlay(self) -> None:
         self.assertEqual(
             browser.classify_overlay("div", None, "custom-dialog-panel"),

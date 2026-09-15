@@ -15,9 +15,11 @@ def register_collection_tools(mcp: Any, session: Any) -> None:
         readiness = await session.wait_until_ready(page)
         if not readiness.get("ready"):
             return result({"collectionStatus": "blocked-unready", "readiness": readiness})
+        scroll_to_top_evidence = await session.scroll_to_top(page)
         scroll = await session.scroll_all(page, max_rounds=max_scroll_rounds)
         info = await session.snapshot(page, screenshot_path)
         info["scroll"] = scroll
+        info["scrollToTop"] = scroll_to_top_evidence
         info["readiness"] = readiness
         return result(info)
 
@@ -28,9 +30,10 @@ def register_collection_tools(mcp: Any, session: Any) -> None:
         readiness = await session.wait_until_ready(page)
         if not readiness.get("ready"):
             return result({"collectionStatus": "blocked-unready", "readiness": readiness})
-        await session.scroll_all(page, max_rounds=max_scroll_rounds)
+        scroll_to_top_evidence = await session.scroll_to_top(page)
+        scroll = await session.scroll_all(page, max_rounds=max_scroll_rounds)
         info = await session.snapshot(page, path)
-        return result({"screenshotPath": info["screenshotPath"], "url": info["pageUrl"], "route": info["route"], "candidateCount": info["candidateCount"], "readiness": readiness})
+        return result({"screenshotPath": info["screenshotPath"], "url": info["pageUrl"], "route": info["route"], "candidateCount": info["candidateCount"], "scrollToTop": scroll_to_top_evidence, "scroll": scroll, "readiness": readiness})
 
     @mcp.tool()
     async def inspect_dom(page_index: int = 0) -> str:
@@ -46,6 +49,11 @@ def register_collection_tools(mcp: Any, session: Any) -> None:
     async def scroll_page(page_index: int = 0, max_scroll_rounds: int = 20) -> str:
         """Scroll the window and nested scroll containers to reveal lazy content."""
         return result(await session.scroll_all(await session.page(page_index), max_rounds=max_scroll_rounds))
+
+    @mcp.tool()
+    async def scroll_to_top(page_index: int = 0) -> str:
+        """Reset the window and nested scroll containers before page evidence collection."""
+        return result(await session.scroll_to_top(await session.page(page_index)))
 
     @mcp.tool()
     async def collect_page_structure(page_index: int = 0, screenshot_path: str | None = None, max_scroll_rounds: int = 20) -> str:

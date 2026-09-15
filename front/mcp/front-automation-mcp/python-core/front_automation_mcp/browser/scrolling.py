@@ -3,6 +3,29 @@ from __future__ import annotations
 from typing import Any
 
 
+async def scroll_to_top(page: Any) -> dict[str, Any]:
+    """Reset the window and nested scroll containers before evidence collection."""
+    return await page.evaluate(
+        """() => {
+          const nodes = [document.scrollingElement, ...document.querySelectorAll('*')]
+            .filter(e => e && e.scrollHeight > e.clientHeight + 20);
+          let resetContainers = 0;
+          for (const e of nodes) {
+            if (e.scrollTop !== 0) e.scrollTop = 0;
+            if (e.scrollTop === 0) resetContainers += 1;
+          }
+          window.scrollTo(0, 0);
+          return {
+            atTop: window.scrollY === 0 && nodes.every(e => e.scrollTop === 0),
+            windowScrollY: window.scrollY,
+            containers: nodes.length,
+            resetContainers,
+            remainingScrolledContainers: nodes.filter(e => e.scrollTop !== 0).length,
+          };
+        }"""
+    )
+
+
 async def scroll_all(page: Any, max_rounds: int = 20) -> dict[str, Any]:
     stable_rounds = 0
     total_containers = 0
@@ -38,5 +61,8 @@ async def scroll_all(page: Any, max_rounds: int = 20) -> dict[str, Any]:
 
 
 class ScrollingMixin:
+    async def scroll_to_top(self, page: Any) -> dict[str, Any]:
+        return await scroll_to_top(page)
+
     async def scroll_all(self, page: Any, max_rounds: int = 20) -> dict[str, Any]:
         return await scroll_all(page, max_rounds)

@@ -28,6 +28,10 @@ class FakeSession:
         self.calls.append(("scroll", max_rounds))
         return {"rounds": 1, "stable": True}
 
+    async def scroll_to_top(self, page):
+        self.calls.append(("top",))
+        return {"atTop": True, "windowScrollY": 0, "resetContainers": 0}
+
     async def snapshot(self, page, screenshot_path):
         self.calls.append(("snapshot", screenshot_path))
         return {
@@ -67,6 +71,7 @@ class CollectionWorkflowTests(unittest.TestCase):
             [call[0] for call in session.calls if call[0] in {"navigate", "switch"}],
             ["navigate", "switch", "navigate", "switch"],
         )
+        self.assertEqual([call[0] for call in session.calls if call[0] in {"top", "scroll"}], ["top", "scroll", "top", "scroll"])
         self.assertEqual(result["tabs"][0]["structure"]["readiness"]["ready"], True)
 
 

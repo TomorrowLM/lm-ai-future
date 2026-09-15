@@ -18,7 +18,7 @@ def classify_dom_candidate(tag: str, role: str | None, class_name: str | None) -
         return "tab"
     if role_name == "switch" or "switch" in classes:
         return "switch"
-    if role_name == "button" or tag_name == "button" or "button" in classes or "btn" in classes or "textbtn" in classes:
+    if role_name == "button" or tag_name == "button" or "button" in classes or "btn" in classes or "textbtn" in classes or "deletebtn" in classes or "axisy2" in classes:
         return "button"
     if tag_name == "a" or "link" in classes:
         return "link"

@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
 from .interaction import InteractionMixin
+from .controls import ControlMixin
 from .navigation import NavigationMixin
 from .overlay import OverlayMixin
 from .readiness import ReadinessMixin
@@ -37,7 +38,7 @@ def cdp_urls_for_port(port: int) -> list[str]:
     return [f"http://[::1]:{port}", f"http://127.0.0.1:{port}"]
 
 
-class BrowserSession(NavigationMixin, InteractionMixin, OverlayMixin, ReadinessMixin, ScrollingMixin, SnapshotMixin):
+class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMixin, ReadinessMixin, ScrollingMixin, SnapshotMixin):
     def __init__(self) -> None:
         self._pw: Playwright | None = None
         self.browser: Browser | None = None

@@ -1,4 +1,5 @@
 import importlib
+import inspect
 import unittest
 
 
@@ -14,6 +15,7 @@ class ModuleBoundaryTests(unittest.TestCase):
         self.assertTrue(callable(navigation.extract_route_info))
         self.assertTrue(callable(interaction.normalize_control_name))
         self.assertTrue(callable(overlay.classify_overlay))
+        self.assertTrue(callable(scrolling.scroll_to_top))
         self.assertTrue(callable(scrolling.scroll_all))
         self.assertTrue(callable(snapshot.classify_dom_candidate))
 
@@ -30,6 +32,16 @@ class ModuleBoundaryTests(unittest.TestCase):
         self.assertTrue(hasattr(tools, "register_browser_tools"))
         self.assertTrue(hasattr(tools, "register_collection_tools"))
         self.assertTrue(hasattr(server, "create_server"))
+
+    def test_browser_tools_expose_business_agnostic_control_primitives(self) -> None:
+        browser_tools = importlib.import_module("front_automation_mcp.tools.browser_tools")
+        source = inspect.getsource(browser_tools.register_browser_tools)
+
+        self.assertIn("fill_text_control", source)
+        self.assertIn("click_visible_control", source)
+        self.assertIn("select_visible_option", source)
+        self.assertNotIn("organization", source.lower())
+        self.assertNotIn("验证码", source)
 
 
 class ModelBoundaryTests(unittest.TestCase):

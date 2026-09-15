@@ -38,6 +38,21 @@ def register_browser_tools(mcp: Any, session: Any) -> None:
         return result(await session.wait_until_ready(await session.page(page_index), max_rounds, interval_ms, stable_rounds))
 
     @mcp.tool()
+    async def fill_text_control(name: str, value: str, occurrence: int = 0, page_index: int = 0, sensitive: bool = True) -> str:
+        """Fill one visible text control selected by AI-provided exact metadata; never return the value."""
+        return result(await session.fill_text_control(await session.page(page_index), name, value, occurrence, sensitive))
+
+    @mcp.tool()
+    async def click_visible_control(name: str, occurrence: int = 0, page_index: int = 0) -> str:
+        """Click one visible control selected by AI-provided exact metadata and return state evidence."""
+        return result(await session.click_visible_control(await session.page(page_index), name, occurrence))
+
+    @mcp.tool()
+    async def select_visible_option(control_name: str, option_name: str, occurrence: int = 0, page_index: int = 0) -> str:
+        """Select one visible option from a control selected by AI-provided exact metadata."""
+        return result(await session.select_visible_option(await session.page(page_index), control_name, option_name, occurrence))
+
+    @mcp.tool()
     async def switch_tab(name: str, occurrence: int = 0, page_index: int = 0) -> str:
         """Switch a visible UI Tab by exact text; this changes only the active view and never submits data."""
         return result(await session.switch_tab(await session.page(page_index), name, occurrence))

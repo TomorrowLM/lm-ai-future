@@ -9,6 +9,9 @@
 - `open_browser_page` / `launch_login_browser`：打开页面或启动隔离 Chrome，登录由用户操作；启动前按 `[::1]`、`127.0.0.1` 探测当前 CDP 端点，端点可达时返回实际 `cdpUrl` 和 `reused: true`，不会重复打开 Chrome
 - `navigate_page`：同源 SPA 路由导航
 - `wait_until_ready`：轮询 route、loading 指示器、DOM 指纹、候选数量和 iframe readyState，确认页面稳定后再截图/采集
+- `fill_text_control`：按 AI 提供的精确文本/label/placeholder/name 与 occurrence 填充可见文本控件；返回值只保留脱敏摘要
+- `click_visible_control`：按 AI 提供的精确控件定位点击，返回 URL、route、DOM fingerprint、overlay 和内容变化证据
+- `select_visible_option`：按 AI 提供的控件名称与选项文本选择可见选项
 - `collect_page_structure`：统一执行增量滚动、截图、DOM/iframe 候选、导航菜单、Dialog/Drawer 检测
 - `collect_navigation_tree`：等待页面稳定后枚举并去重可见菜单候选，不凭空推断父子层级
 - `collect_tab_variants`：传入父路由和 Tab 名称列表，由 MCP 内部逐个回到父路由，完成等待、Tab 切换、截图、滚动、DOM 和 Dialog/Drawer 采集
@@ -18,11 +21,18 @@
 - `enumerate_navigation`：枚举 Vue/React/Ant/Element/View UI 等菜单候选
 - `click_navigation_item`：点击可见菜单项并返回下一层菜单，支持 AI 递归遍历
 - `scroll_page`：增量滚动窗口和内部滚动容器，触发懒加载
+- `scroll_to_top`：重置窗口和内部滚动容器，并返回 `atTop`、`windowScrollY` 和容器复位证据；标准采集接口会自动先调用它
 - `switch_tab`：按可见文本切换标准或自定义 Tab
 - `click_and_collect_overlay(name, occurrence)`：点击低风险控件并采集 Dialog/Drawer；同时比较 URL/route 与主内容 fingerprint。存在 Dialog/Drawer 时优先返回 `transition.type=overlay`；无弹层时，URL/route 或主内容发生变化才返回 `page`、`collectionRequired=true`；同名按钮按可见 occurrence 遍历；只有确实没有页面内容变化时才返回 `state-change`
 - Overlay 证据按顶层 Dialog/Drawer 去重，不能把 mask、wrap、content、header、body、footer 等内部节点重复写成多个弹层。
 - `close_overlay`：关闭已验证的低风险 Dialog/Drawer，避免遮罩影响后续菜单采集
 - `validate_view`：对比 AI 识别结果与 DOM 结果
+
+通用交互原语的职责边界：AI 负责根据截图和 DOM 识别控件、判断业务风险、决定调用顺序并解释结果；MCP 只负责可见控件定位、输入、点击、选择和状态证据采集。MCP 不内置登录字段、组织名称、业务按钮名称或业务流程。
+
+候选发现采用两层通用策略：优先采集语义标签、ARIA、框架通用 class 和可访问属性；再回退到可见事件绑定、指针交互和通用交互 class 的非语义元素。MCP 返回原始候选与定位证据，AI 决定它是菜单、Tab、按钮、筛选器、业务动作还是未知项；不能把某个站点的文字、路由或流程下沉到 MCP。
+
+敏感输入通过 `sensitive=true`（默认值）标记时，MCP 只返回 `provided`、`length` 和 `redacted`，不在返回值、异常摘要或采集 JSON 中回显原文。验证码等一次性值由调用方提供，MCP 不自动获取。
 
 ## 工程结构
 

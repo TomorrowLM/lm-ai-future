@@ -22,7 +22,10 @@ INTERACTIVE_CANDIDATE_SELECTOR = ",".join(
         "[class*='Switch']",
         "[class*='btn']",
         "[class*='button']",
+        "[class*='deleteBtn' i]",
+        "[class*='axisY2' i]",
         ".textBtn",
+        "*",
     ]
 )
 
@@ -75,14 +78,19 @@ CANDIDATE_EVALUATOR = r"""
     if (role === 'menuitem' || classes.includes('menu-item') || classes.includes('ivu-menu-item')) return 'menu';
     if (role === 'tab' || classes.includes('tab') || classes.includes('navitem')) return 'tab';
     if (role === 'switch' || classes.includes('switch')) return 'switch';
-    if (role === 'button' || tag === 'button' || classes.includes('button') || classes.includes('btn') || classes.includes('textbtn')) return 'button';
+    if (role === 'button' || tag === 'button' || classes.includes('button') || classes.includes('btn') || classes.includes('textbtn') || classes.includes('deletebtn') || classes.includes('axisy2')) return 'button';
     if (tag === 'a' || classes.includes('link')) return 'link';
     return 'unknown';
   };
   return elements.filter(element => {
     const rect = element.getBoundingClientRect();
     const style = getComputedStyle(element);
-    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+    const classes = String(element.className || '').toLowerCase();
+    const semantic = element.matches('button,a,input,textarea,select,[contenteditable="true"],[role="button"],[role="tab"],[role="menuitem"],[role="switch"],[role="option"],[tabindex]');
+    const behavior = typeof element.onclick === 'function' || element.hasAttribute('onclick') || style.cursor === 'pointer';
+    const classHint = /(?:btn|button|action|operate|operation|textbtn|axis|delete|edit|add|import|export|search|more|close|reply)/i.test(classes);
+    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none'
+      && (semantic || behavior || classHint);
   }).map((element, index) => ({
     index,
     tag: element.tagName.toLowerCase(),

@@ -20,6 +20,10 @@ class FakeSession:
         self.calls.append("scroll")
         return {"rounds": max_rounds, "stable": True}
 
+    async def scroll_to_top(self, page):
+        self.calls.append("top")
+        return {"atTop": True, "windowScrollY": 0, "resetContainers": 0}
+
     async def snapshot(self, page, screenshot_path):
         self.calls.append("snapshot")
         return {
@@ -47,7 +51,7 @@ class PageStructureCollectorTests(unittest.TestCase):
         session = FakeSession()
         data = asyncio.run(collect_page_structure(session, FakePage(), "capture.png", 5))
 
-        self.assertEqual(session.calls, ["ready", "scroll", "snapshot", "navigation", "overlays"])
+        self.assertEqual(session.calls, ["ready", "top", "scroll", "snapshot", "navigation", "overlays"])
         self.assertEqual(data["readiness"]["ready"], True)
         self.assertEqual(data["route"]["fullUrl"].endswith("menuId=1"), True)
         self.assertEqual(data["dom"]["candidates"][0]["text"], "导出")
