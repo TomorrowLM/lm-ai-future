@@ -34,12 +34,15 @@ test('requestRework updates task status without generating document', async () =
   assert.equal(updated.rework?.id, 'rework-1')
   assert.equal(updated.rework?.reason, '缺少边界场景分析')
   assert.equal(updated.rework?.status, 'requested')
+  assert.equal(updated.rework?.task, reworkFile)
+  assert.deepEqual(updated.rework?.resources, [])
   assert.equal(
-    updated.rework?.prompt,
-    '请读取已挂载的原始任务输入文件和本次返工输入文件，严格按返工要求补齐实现。完成后覆盖原 resultFile，并调用 agent_complete_task。',
+    updated.rework?.notes,
+    '请读取已挂载的原始任务输入文件和本次返工任务文件，严格按返工要求补齐实现。完成后覆盖原 resultFile，并调用 agent_complete_task。',
   )
   assert.equal(updated.rework?.promptFile, undefined)
-  assert.equal(updated.rework?.inputFiles?.[0], reworkFile)
+  assert.equal(updated.rework?.prompt, undefined)
+  assert.equal(updated.rework?.inputFiles, undefined)
   assert.equal(updated.reworks?.length, 1)
   assert.deepEqual(updated.reworks?.[0], updated.rework)
 })
@@ -68,8 +71,8 @@ test('requestRework appends flat rework history and completion syncs current rew
   assert.equal(second.reworkCount, 2)
   assert.equal(second.rework?.id, 'rework-2')
   assert.equal(second.reworks?.length, 2)
-  assert.equal(second.reworks?.[0].inputFiles?.[0], reworkFile1)
-  assert.equal(second.rework?.inputFiles?.[0], reworkFile2)
+  assert.equal(second.reworks?.[0].task, reworkFile1)
+  assert.equal(second.rework?.task, reworkFile2)
 
   const completed = await writeTaskResult(workspaceRoot, task.id, '返工后结果')
 

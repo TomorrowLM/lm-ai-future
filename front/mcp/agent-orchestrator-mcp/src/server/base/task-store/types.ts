@@ -16,10 +16,16 @@ export interface TaskReworkRecord {
   id: string
   /** 返工原因 */
   reason: string
-  /** 返工子任务的独立执行说明 */
-  prompt: string
-  /** 当前返工任务需要挂载的输入文件 */
-  inputFiles: string[]
+  /** 返工子任务描述或任务文件地址 */
+  task?: string
+  /** 返工参考资源文件列表 */
+  resources?: string[]
+  /** 返工补充说明 */
+  notes?: string
+  /** 兼容旧版返工执行说明 */
+  prompt?: string
+  /** 兼容旧版返工输入文件 */
+  inputFiles?: string[]
   /** 兼容旧版返工记录 */
   promptFile?: string
   /** 返工状态：requested（已请求）/ running（执行中）/ completed（已完成） */
@@ -35,18 +41,24 @@ export interface TaskReworkRecord {
 export interface TaskRecord {
   /** 任务唯一 ID，格式为 task-<uuid> */
   id: string
-  /** 任务标题，用于主窗口识别任务边界 */
+  /** 任务标题，用于子聊天会话识别任务边界 */
   title: string
-  /** 任务说明或执行要求。由主 Agent 创建任务时传入；未传时子 Agent 仅根据 inputFiles 中的规格文件和项目 AGENTS.md 执行 */
-  prompt: string
+  /** 子任务描述或任务文件地址 */
+  task?: string
+  /** 子任务参考资源文件列表 */
+  resources?: string[]
+  /** 子任务补充说明 */
+  notes?: string
+  /** 兼容旧版任务说明字段 */
+  prompt?: string
   /** 任务所属工作区绝对路径 */
   workspaceRoot: string
-  /** 子任务输入文件列表，页面工作流内至少应包含对应 spec/*.md */
-  inputFiles: string[]
+  /** 兼容旧版参考资源字段 */
+  inputFiles?: string[]
   /** 结果文件路径，默认写入 docs/design|prod/<需求目录>/results/task-id.md */
   resultFile: string
-  /** 视觉/头脑风暴文件目录 */
-  visualDir: string
+  /** 视觉产物目录，通常位于当前设计目录的 assets 下 */
+  visualDir?: string
   /** 任务状态：pending / running / completed / failed / reviewed / rework_requested */
   status: TaskStatus
   /** 创建时间 ISO 字符串 */
@@ -72,15 +84,21 @@ export interface TaskRecord {
 export interface CreateTaskInput {
   /** 任务标题 */
   title: string
-  /** 可选。任务说明或执行要求。未传时子 Agent 仅根据 inputFiles 中的规格文件和项目 AGENTS.md 执行 */
+  /** 子任务描述或任务文件地址，新任务必填 */
+  task?: string
+  /** 子任务补充说明 */
+  notes?: string
+  /** 兼容旧版任务说明字段 */
   prompt?: string
   /** 任务所属工作区绝对路径 */
   workspaceRoot: string
-  /** 任务需要读取的文件路径，必须在 workspaceRoot 内 */
+  /** 子任务参考资源文件列表，必须位于 workspaceRoot 内 */
+  resources?: string[]
+  /** 兼容旧版参考资源字段 */
   inputFiles?: string[]
   /** 结果文件路径，默认写入 docs/design|prod/<需求目录>/results/task-id.md；无法推断时写入 docs/results/task-id.md */
   resultFile?: string
-  /** 视觉/头脑风暴文件目录，未传时根据需求文件或结果文件自动推断 */
+  /** 可选视觉产物目录，通常位于当前设计目录的 assets 下 */
   visualDir?: string
 }
 

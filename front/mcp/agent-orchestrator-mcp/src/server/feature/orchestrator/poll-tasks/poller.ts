@@ -11,7 +11,7 @@ export interface PolledTask {
   status: TaskRecord['status']
   hasResult: boolean
   resultFile: string
-  visualDir: string
+  visualDir?: string
   updatedAt: string
   startedAt?: string
   completedAt?: string

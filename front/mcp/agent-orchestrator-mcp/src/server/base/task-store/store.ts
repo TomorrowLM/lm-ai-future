@@ -48,7 +48,7 @@ function defaultResultFileFromCandidates(workspaceRoot: string, taskId: string, 
 }
 
 export function defaultVisualDir(workspaceRoot: string) {
-  return path.join(normalizeRoot(workspaceRoot), '.superpowers', 'brainstorm')
+  return path.join(normalizeRoot(workspaceRoot), 'docs', 'assets')
 }
 
 function pathSegments(targetPath: string) {
@@ -74,10 +74,10 @@ function inferVisualDir(workspaceRoot: string, candidates: string[]) {
   for (const candidate of candidates) {
     const requirementDir = requirementDirFromPath(candidate)
 
-    if (requirementDir) return path.join(requirementDir, 'brainstorm')
+    if (requirementDir) return path.join(requirementDir, 'assets')
   }
 
-  return defaultVisualDir(workspaceRoot)
+  return undefined
 }
 
 function taskStorePathForResultFile(workspaceRoot: string, resultFile: string) {
@@ -191,21 +191,25 @@ export async function createTask(input: CreateTaskInput) {
   const workspaceRoot = normalizeRoot(input.workspaceRoot)
   const id = `task-${randomUUID()}`
   const now = new Date().toISOString()
-  const inputFiles = (input.inputFiles ?? []).map((item) => resolveInsideWorkspace(workspaceRoot, item))
+  const resourceInputs = input.resources && input.resources.length > 0
+    ? input.resources
+    : input.inputFiles ?? []
+  const resources = resourceInputs.map((item) => resolveInsideWorkspace(workspaceRoot, item))
   const resultFile = input.resultFile
     ? resolveInsideWorkspace(workspaceRoot, input.resultFile)
-    : defaultResultFileFromCandidates(workspaceRoot, id, inputFiles)
+    : defaultResultFileFromCandidates(workspaceRoot, id, resources)
   const visualDir = input.visualDir
     ? resolveInsideWorkspace(workspaceRoot, input.visualDir)
-    : inferVisualDir(workspaceRoot, input.resultFile ? [resultFile, ...inputFiles] : inputFiles)
+    : inferVisualDir(workspaceRoot, input.resultFile ? [resultFile, ...resources] : resources)
   const storePath = taskStorePathForResultFile(workspaceRoot, resultFile)
 
   const task: TaskRecord = {
     id,
     title: input.title,
-    prompt: input.prompt ?? '',
+    task: input.task,
     workspaceRoot,
-    inputFiles,
+    resources,
+    notes: input.notes ?? input.prompt,
     resultFile,
     visualDir,
     status: 'pending',

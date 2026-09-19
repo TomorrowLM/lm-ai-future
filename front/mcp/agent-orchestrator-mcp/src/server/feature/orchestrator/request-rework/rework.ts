@@ -1,5 +1,7 @@
+import { stat } from 'node:fs/promises'
 import {
   getTask,
+  resolveInsideWorkspace,
   updateTask,
 } from '../../../base/task-store/index.js'
 import type { TaskRecord, TaskReworkRecord } from '../../../base/task-store/index.js'
@@ -11,7 +13,7 @@ import type { TaskRecord, TaskReworkRecord } from '../../../base/task-store/inde
  * Agent 负责按模板写入返工文档，再调用本函数传入 reworkFile 路径。
  * MCP 只更新 tasks.json 状态账本，不生成任何文档内容。
  */
-const reworkInstruction = '请读取已挂载的原始任务输入文件和本次返工输入文件，严格按返工要求补齐实现。完成后覆盖原 resultFile，并调用 agent_complete_task。'
+const reworkNotes = '请读取已挂载的原始任务输入文件和本次返工任务文件，严格按返工要求补齐实现。完成后覆盖原 resultFile，并调用 agent_complete_task。'
 
 export async function requestRework(workspaceRoot: string, taskId: string, reason: string, reworkFile: string) {
   const task = await getTask(workspaceRoot, taskId)
@@ -20,14 +22,21 @@ export async function requestRework(workspaceRoot: string, taskId: string, reaso
     throw new Error(`任务不存在: ${taskId}`)
   }
 
+  const resolvedReworkFile = resolveInsideWorkspace(workspaceRoot, reworkFile)
+  const reworkFileStat = await stat(resolvedReworkFile)
+  if (!reworkFileStat.isFile()) {
+    throw new Error(`返工任务文件不是普通文件: ${reworkFile}`)
+  }
+
   const reworkCount = (task.reworkCount ?? 0) + 1
   const now = new Date().toISOString()
   const reworkId = `rework-${reworkCount}`
   const rework: TaskReworkRecord = {
     id: reworkId,
     reason,
-    prompt: reworkInstruction,
-    inputFiles: [reworkFile],
+    task: resolvedReworkFile,
+    resources: [],
+    notes: reworkNotes,
     status: 'requested',
     createdAt: now,
   }

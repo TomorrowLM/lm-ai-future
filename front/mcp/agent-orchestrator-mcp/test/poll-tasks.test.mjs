@@ -153,7 +153,7 @@ test('pollTasks returns visualDir for agent placement decisions', async () => {
     title: '轮询视觉目录测试',
     prompt: '验证 pollTasks visualDir',
     workspaceRoot,
-    visualDir: path.join('docs', 'design', 'demo', 'brainstorm'),
+    visualDir: path.join('docs', 'design', 'demo', 'assets'),
   })
 
   const result = await pollTasks(workspaceRoot, [task.id])
@@ -182,13 +182,7 @@ test('createTask infers visualDir from requirement input file', async () => {
 
   assert.equal(
     task.visualDir,
-    path.join(
-      workspaceRoot,
-      'docs',
-      'design',
-      'checkplan-task-supervisor-role',
-      'brainstorm',
-    ),
+    path.join(workspaceRoot, 'docs', 'design', 'checkplan-task-supervisor-role', 'assets'),
   )
 })
 
@@ -198,11 +192,28 @@ test('createTask honors explicit visualDir inside workspace', async () => {
     title: '显式视觉目录测试',
     prompt: '验证 visualDir',
     workspaceRoot,
-    visualDir: path.join('docs', 'design', 'demo', 'brainstorm'),
+    visualDir: path.join('docs', 'design', 'demo', 'assets'),
   })
 
   assert.equal(
     task.visualDir,
-    path.join(workspaceRoot, 'docs', 'design', 'demo', 'brainstorm'),
+    path.join(workspaceRoot, 'docs', 'design', 'demo', 'assets'),
   )
+})
+
+test('createTask falls back to legacy inputFiles when resources is empty', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-resources-fallback-'))
+  const inputFile = path.join(workspaceRoot, 'docs', 'design', 'demo', 'spec.md')
+  await mkdir(path.dirname(inputFile), { recursive: true })
+  await writeFile(inputFile, 'spec', 'utf8')
+
+  const task = await createTask({
+    title: '兼容资源字段测试',
+    task: '验证旧字段兼容',
+    workspaceRoot,
+    resources: [],
+    inputFiles: [inputFile],
+  })
+
+  assert.deepEqual(task.resources, [inputFile])
 })

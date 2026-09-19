@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
-import { access } from 'node:fs/promises'
+import { access, stat } from 'node:fs/promises'
 import { constants } from 'node:fs'
-import type { TaskRecord } from '../../../base/task-store/index.js'
+import { resolveInsideWorkspace, type TaskRecord } from '../../../base/task-store/index.js'
 
 const macOSCodeCli = '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
 
@@ -20,46 +20,79 @@ async function resolveCodeCli() {
  * 构造子聊天窗口的独立执行说明。
  */
 export function buildInstruction(task: TaskRecord): string {
-  if (task.status === 'rework_requested' && task.rework?.prompt) {
-    return task.rework.prompt
+  const activeRework = task.status === 'rework_requested' ? task.rework : undefined
+  const taskDescription = activeRework?.task ?? task.task ?? task.prompt ?? '请根据参考资源完成子任务。'
+  const notes = activeRework?.notes
+    ?? activeRework?.prompt
+    ?? task.notes
+    ?? (task.task ? task.prompt : undefined)
+  const taskResources = task.resources && task.resources.length > 0 ? task.resources : task.inputFiles ?? []
+  const reworkResources = activeRework?.resources && activeRework.resources.length > 0
+    ? activeRework.resources
+    : activeRework?.inputFiles ?? []
+  const resources = [
+    ...taskResources,
+    ...reworkResources,
+  ]
+  const lines = [`【${task.title}】`, '', '## 子任务', taskDescription]
+
+  lines.push('', '## 参考资源')
+  lines.push(...(resources.length > 0 ? resources.map((resource) => `- ${resource}`) : ['- 无']))
+
+  if (notes?.trim()) {
+    lines.push('', '## 补充说明', notes)
   }
 
-  const lines = ['请严格执行已挂载的任务输入文件。']
-
-  if (task.prompt?.trim()) {
-    lines.push('', '任务要求：', task.prompt)
-  }
-
-  if (task.status === 'rework_requested') {
-    const reworkReason = task.reviewNote ?? task.error
-    if (reworkReason?.trim()) {
-      lines.push('', `本次为返工任务，返工原因：${reworkReason}`)
-    }
+  if (activeRework?.reason?.trim()) {
+    lines.push('', `本次为返工任务，返工原因：${activeRework.reason}`)
   }
 
   lines.push(
     '',
-    `如需生成视觉/头脑风暴文件，请放入 ${task.visualDir}。完成后写入结果文件并调用 agent_complete_task。`,
+    '## 完成协议',
+    `结果文件：${task.resultFile}`,
+    `视觉产物目录：${task.visualDir ?? '未指定'}`,
+    '完成后必须调用 agent_complete_task，并使用以下固定参数：',
+    `workspaceRoot: ${task.workspaceRoot}`,
+    `taskId: ${task.id}`,
+    'result: 你的 Markdown 完成报告',
   )
 
   return lines.join('\n')
 }
 
-export function resolveTaskInputFiles(task: TaskRecord): string[] {
-  const legacyReworkFile = task.rework?.promptFile ? [task.rework.promptFile] : []
-  const reworkInputFiles = task.status === 'rework_requested'
-    ? (task.rework?.inputFiles ?? legacyReworkFile)
-    : []
+async function resolveExistingTaskFile(task: TaskRecord, value: string | undefined) {
+  if (!value) return undefined
 
-  return [...new Set([...task.inputFiles, ...reworkInputFiles])]
+  try {
+    const filePath = resolveInsideWorkspace(task.workspaceRoot, value)
+    const fileStat = await stat(filePath)
+    return fileStat.isFile() ? filePath : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export async function resolveTaskInputFiles(task: TaskRecord): Promise<string[]> {
+  const legacyReworkFile = task.rework?.promptFile ? [task.rework.promptFile] : []
+  const activeRework = task.status === 'rework_requested' ? task.rework : undefined
+  const taskFile = await resolveExistingTaskFile(task, task.task)
+  const reworkTaskFile = await resolveExistingTaskFile(task, activeRework?.task)
+  const resources = task.resources && task.resources.length > 0 ? task.resources : task.inputFiles ?? []
+  const reworkResources = activeRework?.resources && activeRework.resources.length > 0
+    ? activeRework.resources
+    : activeRework?.inputFiles ?? legacyReworkFile
+
+  return [...new Set([
+    ...(taskFile ? [taskFile] : []),
+    ...resources,
+    ...(reworkTaskFile ? [reworkTaskFile] : []),
+    ...reworkResources,
+  ])]
 }
 
 export async function openTaskChat(task: TaskRecord) {
-  const inputFiles = resolveTaskInputFiles(task)
-
-  if (inputFiles.length === 0) {
-    throw new Error(`任务 ${task.id} 没有关联的输入文件`)
-  }
+  const inputFiles = await resolveTaskInputFiles(task)
 
   const args = [
     'chat',

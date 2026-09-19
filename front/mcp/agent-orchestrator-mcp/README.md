@@ -46,14 +46,14 @@ flowchart LR
 | 入口 | `src/index.ts` | 创建 stdio MCP 传输，注册工具列表和工具调用处理器。 |
 | Server 聚合 | `src/server/index.ts` | 汇总所有功能工具，并把 MCP 请求转发到对应 dispatcher。 |
 | Orchestrator | `src/server/feature/orchestrator/` | 提供任务创建、打开子聊天、轮询、等待、完成、读取、审查、返工和汇总等工具。 |
-| Task Store | `src/server/base/task-store/` | 维护任务记录，生成默认 Prompt / Result 路径，读写任务状态。 |
+| Task Store | `src/server/base/task-store/` | 维护任务记录，推断 Result 和视觉产物路径，读写任务状态。 |
 | Path Guard | `src/server/base/task-store/path-guard.ts` | 校验 `workspaceRoot` 必须是绝对路径，并限制输入 / 输出文件位于工作区内。 |
 | 工具参数 | `src/utils/args.ts` | 解析和校验 MCP 工具入参。 |
 | 响应格式 | `src/utils/text.ts` | 把工具返回值统一包装为 MCP text content。 |
 
 ### 数据落盘
 
-所有任务数据默认写入调用方传入的 `workspaceRoot` 内。若能从 `inputFiles` 或 `resultFile` 推断出需求目录，则直接落在 `docs/design/xx/` 或 `docs/prod/xx/` 下；无法推断时使用 `docs/` 兜底：
+所有任务数据默认写入调用方传入的 `workspaceRoot` 内。若能从任务文件、`resources` 或 `resultFile` 推断出需求目录，则直接落在 `docs/design/xx/` 或 `docs/prod/xx/` 下；无法推断时使用 `docs/` 兜底：
 
 ```text
 <workspaceRoot>/
@@ -78,7 +78,7 @@ flowchart LR
 | `reviewed` | 主 Agent 已审查该任务结果。 |
 | `rework_requested` | 主 Agent 要求子任务返工。 |
 
-任务记录中还会保存 `inputFiles`、`resultFile`、`reviewNote`、`reworkCount` 等字段。返工记录使用独立的 `prompt` 作为子任务说明，并通过 `rework.inputFiles` 挂载返工要求文档。
+任务记录中还会保存 `title`、`task`、`resources`、`notes`、`resultFile`、`visualDir`、`reviewNote`、`reworkCount` 等字段。`task` 必填，可写简短任务描述或任务文件地址；`resources` 保存参考资源；`notes` 保存补充说明。旧任务的 `prompt`、`inputFiles` 仅作为兼容读取。返工记录使用相同的 `task`、`resources`、`notes` 字段。
 
 ### MCP 工具
 
@@ -88,7 +88,7 @@ flowchart LR
 | `agent_create_tasks` | 批量创建多个编排任务。 |
 | `agent_list_tasks` | 列出指定工作区任务，可按状态过滤。 |
 | `agent_get_task` | 获取单个任务详情。 |
-| `agent_open_task_chats` | 为任务生成 Prompt 文件，并通过 VS Code CLI 打开 Copilot Chat 子窗口。 |
+| `agent_open_task_chats` | 按任务标题、`task`、`resources` 和 `notes` 组装指令，并通过 VS Code CLI 使用 `--reuse-window` 打开 Copilot Chat 子窗口。 |
 | `agent_wait_for_tasks` | 等待多个任务完成，基于状态和结果文件轮询。 |
 | `agent_poll_tasks` | 非阻塞查看多个任务的当前状态。 |
 | `agent_complete_task` | 子 Agent 写入结果并标记任务完成。 |
@@ -104,9 +104,10 @@ flowchart LR
 主 Agent 根据当前需求识别可以独立执行的子任务，并调用 `agent_create_task` 或 `agent_create_tasks` 创建任务。每个任务包含：
 
 - `title`：任务标题；
-- `prompt`：任务说明和验收要求；
+- `task`：必填的任务描述或任务文件地址；
 - `workspaceRoot`：任务所属工作区绝对路径；
-- `inputFiles`：子任务需要读取的文件列表；
+- `resources`：子任务需要读取的参考文件列表；
+- `notes`：补充说明、边界和暂不处理项；
 - `resultFile`：可选结果文件路径，未传时默认写入 `docs/design|prod/<需求目录>/results/task-<uuid>.md`，无法推断需求目录时写入 `docs/results/task-<uuid>.md`。
 
 创建后，服务端会在同一需求目录下的 `tasks.json` 中追加任务记录，初始状态为 `pending`。
@@ -115,18 +116,18 @@ flowchart LR
 
 主 Agent 调用 `agent_open_task_chats` 后，服务端会：
 
-1. 合并任务的 `inputFiles` 与当前返工的 `rework.inputFiles`；
-2. 通过 VS Code CLI 为每个输入文件追加 `--add-file <inputFile>`；
+1. 合并任务的任务文件、`resources` 与当前返工的 `rework.task`、`rework.resources`；
+2. 通过 VS Code CLI 为每个文件追加 `--add-file <file>`，并使用 `--reuse-window` 复用最近活动的 VS Code 窗口；
 3. 将任务状态更新为 `running`；
 4. 返回任务 ID 和结果文件路径。
 
-子聊天窗口中的 Agent 读取已挂载输入文件，并按照任务的独立 `prompt` 完成执行和结果写入。
+子聊天窗口中的 Agent 按任务标题、`task`、`notes` 和参考资源完成执行。`task` 为已存在的工作区文件地址时会自动挂载；否则按内联任务描述处理。CLI 不提供单独的会话命名参数。
 
 ### 3. 子 Agent 执行并提交结果
 
 子 Agent 完成任务后有两种完成方式：
 
-- 推荐：调用 `agent_complete_task`，由服务端写入结果文件并更新状态为 `completed`；
+- 推荐：调用 `agent_complete_task`，使用子聊天指令中固定的 `workspaceRoot` 和 `taskId`，由服务端写入结果文件并更新状态为 `completed`；
 - 兼容：直接写入任务的 `resultFile`，主 Agent 后续轮询时会检测结果文件并自动同步为 `completed`。
 
 子 Agent 不应提交代码、推送代码、删除文件或执行破坏性操作。
@@ -147,7 +148,7 @@ flowchart LR
 1. 使用 `agent_read_task_result` 读取单个任务结果；
 2. 使用 `agent_summarize_results` 合并多个任务结果；
 3. 审查通过后调用 `agent_mark_task_reviewed`；
-4. 结果不合格时调用 `agent_request_rework`，写入返工原因并生成返工要求文档。
+4. 结果不合格时调用 `agent_request_rework`，写入返工原因并记录统一的返工任务文件。
 
 ### 6. 返工流程
 
@@ -167,9 +168,9 @@ flowchart LR
 2. 将 `reviewNote` 写为返工原因；
 3. 将 `reworkCount` 加 1；
 4. 生成同一需求目录下的 `reworks/task-<uuid>-rework-N.md`；
-5. 将返工文档写入 `rework.inputFiles`，并生成一条简短独立的 `rework.prompt`。
+5. 将返工文档写入 `rework.task`，并生成 `rework.resources` 与 `rework.notes`。
 
-随后主 Agent 再调用 `agent_open_task_chats`，服务端会同时挂载原任务输入文件与当前 `rework.inputFiles`，并把 `rework.prompt` 作为子任务指令。子 Agent 按返工文档修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
+随后主 Agent 再调用 `agent_open_task_chats`，服务端会同时挂载原任务文件、参考资源和当前 `rework.task`、`rework.resources`，并把 `rework.notes` 作为补充说明。子 Agent 按返工文档修订并覆盖写回同一个 `resultFile`，完成后调用 `agent_complete_task`。
 
 推荐主窗口口令：
 
@@ -191,7 +192,7 @@ sequenceDiagram
 	MCP->>Store: 写入 pending 任务
 	MCP-->>Main: 返回 taskIds
 	Main->>MCP: agent_open_task_chats
-	MCP->>Store: 写入 Prompt 文件并标记 running
+	MCP->>Store: 标记 running
 	MCP-->>Chat: 通过 VS Code CLI 打开子聊天
 	Chat->>MCP: agent_complete_task
 	MCP->>Result: 写入结果文件
@@ -202,9 +203,9 @@ sequenceDiagram
 	MCP->>Result: 读取多个结果
 	MCP-->>Main: 返回汇总
 	Main->>MCP: agent_mark_task_reviewed / agent_request_rework
-	MCP->>Store: 返工时生成 rework Prompt 并标记 rework_requested
+	MCP->>Store: 返工时记录 rework.task/resources/notes 并标记 rework_requested
 	Main->>MCP: agent_open_task_chats
-	MCP-->>Chat: 使用最新 rework Prompt 打开新的子聊天
+	MCP-->>Chat: 使用最新返工任务信息打开子聊天
 ```
 
 ## 使用方式
@@ -246,8 +247,10 @@ CODE_CLI="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" 
 ## 安全边界
 
 - `workspaceRoot` 必须是绝对路径；
-- `inputFiles` 和自定义 `resultFile` 必须位于 `workspaceRoot` 内；
-- 服务只负责工作区内任务记录、Prompt 文件和结果文件读写，默认位置为 `docs/design|prod/<需求目录>/`；
+- 任务文件、`resources` 和自定义 `resultFile` 必须位于 `workspaceRoot` 内；
+- 服务只负责工作区内任务记录和结果文件读写，默认位置为 `docs/design|prod/<需求目录>/`；
+- `visualDir` 仅在需要视觉产物时传入，且应位于当前设计目录的 `assets/` 下；
+- MCP 不自动追加 `build`，只执行任务定义或规格中明确要求的验证命令；
 - 子 Agent Prompt 明确禁止提交、推送、删除文件或执行破坏性操作；
 - `agent_open_task_chats` 只打开子聊天窗口，不读取聊天输出。
 

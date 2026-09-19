@@ -9,7 +9,7 @@ export const agentRequestReworkTool: Tool = {
       workspaceRoot: { type: 'string', description: '工作区绝对路径' },
       taskId: { type: 'string', description: '任务 ID' },
       reason: { type: 'string', description: '返工原因' },
-      reworkFile: { type: 'string', description: 'Agent 已写入的返工文档绝对路径，MCP 将其作为 rework.inputFiles[0]' },
+      reworkFile: { type: 'string', description: 'Agent 已写入的返工任务文件绝对路径，MCP 将其写入 rework.task' },
     },
     required: ['workspaceRoot', 'taskId', 'reason', 'reworkFile'],
   },
