@@ -4,8 +4,9 @@
 
 ## 当前工具
 
-- `connect_browser`：连接 Chrome/CDP
-- `list_pages`：列出标签页
+- `connect_browser`：连接指定 Chrome/CDP endpoint
+- `connect_browsers`：发现并连接已启用远程调试的 Chrome/Chromium 实例
+- `list_pages`：列出所有已连接实例的标签页，返回跨实例全局 `index`、`browserId` 和 `browserLabel`
 - `open_browser_page` / `launch_login_browser`：打开页面或启动隔离 Chrome，登录由用户操作；启动前按 `[::1]`、`127.0.0.1` 探测当前 CDP 端点，端点可达时返回实际 `cdpUrl` 和 `reused: true`，不会重复打开 Chrome
 - `navigate_page`：同源 SPA 路由导航
 - `wait_until_ready`：轮询 route、loading 指示器、DOM 指纹、候选数量和 iframe readyState，确认页面稳定后再截图/采集
@@ -76,4 +77,8 @@ python-core/
 uv run --directory front/mcp/front-automation-mcp/python-core python server.py
 ```
 
-连接已有 Chrome 前，使用 `--remote-debugging-port=9222` 启动 Chrome。多聊天窗之间不共享 MCP 会话状态；本 MCP 只探测当前配置端点的实际监听地址。macOS 可能同时存在 IPv6/IPv4 两个 loopback listener，必须沿用工具返回的实际 `cdpUrl`；`list_pages` 返回空数组表示该端点暂无页面，不表示需要新开浏览器。
+`connect_browsers` 会检查各平台的 Chrome/Chromium 默认用户数据目录，并读取运行进程参数中的自定义 `--user-data-dir`。只有存在有效 `DevToolsActivePort` 的实例才会连接；它不会启动浏览器、创建标签页或导航已有标签页。Chrome 144+ 可在目标实例打开 `chrome://inspect/#remote-debugging` 并允许远程调试；旧式 CDP 实例可使用 `--remote-debugging-port` 启动。MCP 进程必须能读取对应用户数据目录，macOS 隐私权限可能阻止读取。远程调试会让 MCP 访问该实例中已登录的页面，只应对可信的本地 MCP 启用。
+
+`list_pages` 的 `index` 是所有已连接实例和 context 的全局索引，可直接传给页面操作工具。`browserId` 和 `browserLabel` 用于区分来源。`connect_browser` 仍支持手动指定单个 CDP endpoint。未启用远程调试、目录不可读或 endpoint 失效的实例不会被附加；此功能只发现 Chrome/Chromium，不扫描 Edge、Brave、Firefox 或 Safari。
+
+多聊天窗之间不共享 MCP 会话状态。macOS 可能同时存在 IPv6/IPv4 两个 loopback listener，手动连接时应沿用工具返回的实际 `cdpUrl`；空页面列表表示当前已连接的 endpoint 暂无可见页面，不表示需要新开浏览器。

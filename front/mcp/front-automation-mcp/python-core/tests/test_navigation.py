@@ -1,5 +1,6 @@
 import asyncio
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import browser
@@ -83,6 +84,41 @@ class LoginBrowserReuseTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result["launched"])
         self.assertFalse(result["reused"])
         launch.assert_called_once()
+
+
+class BrowserSessionPagesTests(unittest.IsolatedAsyncioTestCase):
+    async def test_pages_includes_all_browser_contexts(self) -> None:
+        session = BrowserSession()
+        first_page = object()
+        second_page = object()
+        first_context = SimpleNamespace(pages=[first_page])
+        second_context = SimpleNamespace(pages=[second_page])
+        session.browser = SimpleNamespace(contexts=[first_context, second_context])
+        session.context = first_context
+
+        self.assertEqual(await session.pages(), [first_page, second_page])
+
+
+class BrowserSessionConnectTests(unittest.IsolatedAsyncioTestCase):
+    async def test_direct_cdp_connection_remains_idempotent(self) -> None:
+        session = BrowserSession()
+        browser = SimpleNamespace(contexts=[SimpleNamespace(pages=[])])
+        connect_over_cdp = AsyncMock(return_value=browser)
+        playwright = SimpleNamespace(
+            chromium=SimpleNamespace(connect_over_cdp=connect_over_cdp)
+        )
+        playwright_manager = SimpleNamespace(start=AsyncMock(return_value=playwright))
+
+        with patch(
+            "front_automation_mcp.browser.session.async_playwright",
+            return_value=playwright_manager,
+        ):
+            first_result = await session.connect("http://127.0.0.1:9222")
+            second_result = await session.connect("http://127.0.0.1:9222")
+
+        self.assertEqual(first_result, second_result)
+        self.assertEqual(first_result["pages"], 0)
+        connect_over_cdp.assert_awaited_once_with("http://127.0.0.1:9222")
 
 
 class NormalizeControlNameTests(unittest.TestCase):

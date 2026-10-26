@@ -12,10 +12,26 @@ def register_browser_tools(mcp: Any, session: Any) -> None:
         return result(await session.connect(cdp_url))
 
     @mcp.tool()
+    async def connect_browsers() -> str:
+        """Discover and connect to running Chrome/Chromium instances with remote debugging enabled."""
+        return result(await session.connect_browsers())
+
+    @mcp.tool()
     async def list_pages() -> str:
         """List currently attached browser pages and URLs."""
-        pages = await session.pages()
-        return result([{"index": i, "url": page.url, "title": await page.title()} for i, page in enumerate(pages)])
+        entries = await session.page_entries()
+        return result(
+            [
+                {
+                    "index": index,
+                    "browserId": browser_id,
+                    "browserLabel": browser_label,
+                    "url": page.url,
+                    "title": await page.title(),
+                }
+                for index, (page, browser_id, browser_label) in enumerate(entries)
+            ]
+        )
 
     @mcp.tool()
     async def open_browser_page(url: str = "") -> str:

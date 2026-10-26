@@ -20,4 +20,8 @@ def main() -> None:
     mcp.run()
 
 
+if __name__ == "__main__":
+    main()
+
+
 __all__ = ["create_server", "main", "mcp"]
