@@ -52,6 +52,12 @@ class ModelBoundaryTests(unittest.TestCase):
         self.assertTrue(hasattr(route, "RouteInfo"))
         self.assertTrue(hasattr(snapshot, "Snapshot"))
 
+    def test_legacy_model_facade_reexports_layout_target(self) -> None:
+        import models
+        from front_automation_mcp.models import LayoutTarget
+
+        self.assertIs(models.LayoutTarget, LayoutTarget)
+
 
 if __name__ == "__main__":
     unittest.main()

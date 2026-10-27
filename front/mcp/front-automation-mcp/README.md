@@ -19,6 +19,7 @@
 - `page_snapshot`：截图、路由、DOM 文本、框架感知的交互候选
 - `page_screenshot`：保存整页截图并返回路由和候选数量
 - `inspect_dom`：读取 DOM、iframe、候选元素和路由信息
+- `measure_layout`：按 AI 提供的精确元数据读取元素 rect、computed spacing、字体、viewport 与 DPR；只读，不滚动或交互
 - `enumerate_navigation`：枚举 Vue/React/Ant/Element/View UI 等菜单候选
 - `click_navigation_item`：点击可见菜单项并返回下一层菜单，支持 AI 递归遍历
 - `scroll_page`：增量滚动窗口和内部滚动容器，触发懒加载
@@ -28,6 +29,12 @@
 - Overlay 证据按顶层 Dialog/Drawer 去重，不能把 mask、wrap、content、header、body、footer 等内部节点重复写成多个弹层。
 - `close_overlay`：关闭已验证的低风险 Dialog/Drawer，避免遮罩影响后续菜单采集
 - `validate_view`：对比 AI 识别结果与 DOM 结果
+
+### 布局测量
+
+先通过 `inspect_dom` 或截图定位目标，再调用 `measure_layout`。`targets` 中每项需有唯一 `id`，并至少提供一个精确字段：`text`、`tag`、`role`、`className`、`ariaLabel` 或 `title`；每次最多测量 25 个目标。可用 `frameIndex` 指定 iframe，重复目标用 `occurrence` 消歧。不接受任意 CSS selector，也不自动滚动。
+
+`rect` 数值以 CSS px 表示，坐标相对对应 frame 的 viewport；`inViewport` 单独表示矩形是否与当前 viewport 相交。`not-visible` 表示 CSS 隐藏或没有布局盒，不表示元素一定在屏外。computed style 保留浏览器序列化值，可能是 `px`、百分比或 `normal`，不要一概当作 px。响应还包含 viewport 尺寸、DPR、visual viewport scale 和滚动位置。目标状态包括 `measured`、`not-found`、`not-visible`、`ambiguous`、`occurrence-unavailable` 和 `frame-unavailable`。测量父容器与子元素时分别提交两个目标，由 AI 根据各自矩形和 computed style 计算视觉间距；MCP 不读取 Figma，也不判断设计差异或业务对错。
 
 通用交互原语的职责边界：AI 负责根据截图和 DOM 识别控件、判断业务风险、决定调用顺序并解释结果；MCP 只负责可见控件定位、输入、点击、选择和状态证据采集。MCP 不内置登录字段、组织名称、业务按钮名称或业务流程。
 

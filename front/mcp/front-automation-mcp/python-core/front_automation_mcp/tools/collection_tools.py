@@ -4,10 +4,23 @@ from typing import Any
 
 from ..collectors import collect_page_structure as collect_structure
 from ..collectors import collect_tab_variants as collect_tab_variants_workflow, normalize_navigation
+from ..models import LayoutTarget
 from ..serializers import result
 
 
 def register_collection_tools(mcp: Any, session: Any) -> None:
+    @mcp.tool()
+    async def measure_layout(targets: list[LayoutTarget], page_index: int = 0) -> str:
+        """Measure selected elements without scrolling or interacting with the page."""
+        page = await session.page(page_index)
+        readiness = await session.wait_until_ready(page)
+        if not readiness.get("ready"):
+            return result({"collectionStatus": "blocked-unready", "readiness": readiness})
+        target_metadata = [target.model_dump(by_alias=True, exclude_none=True) for target in targets]
+        measurements = await session.measure_layout(page, target_metadata)
+        measurements["readiness"] = readiness
+        return result(measurements)
+
     @mcp.tool()
     async def page_snapshot(page_index: int = 0, screenshot_path: str | None = None, max_scroll_rounds: int = 20) -> str:
         """Capture screenshot, route, frame-aware DOM candidates, and lazy-loaded content."""
