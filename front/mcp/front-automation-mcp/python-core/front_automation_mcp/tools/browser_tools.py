@@ -12,9 +12,9 @@ def register_browser_tools(mcp: Any, session: Any) -> None:
         return result(await session.connect(cdp_url))
 
     @mcp.tool()
-    async def connect_browsers() -> str:
-        """Discover and connect to running Chrome/Chromium instances with remote debugging enabled."""
-        return result(await session.connect_browsers())
+    async def connect_browsers(target_url: str | None = None) -> str:
+        """Discover Chrome/Chromium and optionally diagnose an exact URL among attached pages without navigating."""
+        return result(await session.connect_browsers(target_url))
 
     @mcp.tool()
     async def list_pages() -> str:

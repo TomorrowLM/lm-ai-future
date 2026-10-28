@@ -142,7 +142,13 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
             return "Chromium"
         return "Google Chrome Stable"
 
-    async def connect_browsers(self) -> dict[str, Any]:
+    async def connect_browsers(self, target_url: str | None = None) -> dict[str, Any]:
+        if target_url is not None:
+            target_url = target_url.strip()
+            parsed_target = urlsplit(target_url)
+            if parsed_target.scheme not in {"http", "https"} or not parsed_target.netloc:
+                raise ValueError("target URL must be an absolute http(s) URL")
+
         home = Path.home()
         running_dirs = running_chrome_user_data_dirs(
             sys.platform,
@@ -222,6 +228,46 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
                 "No Chrome/Chromium instances with remote debugging enabled were found. "
                 "Enable remote debugging in each browser instance first."
             )
+        if target_url is not None:
+            entries = (
+                await self.page_entries()
+                if self._connections or self.context
+                else []
+            )
+            matches = []
+            for index, (page, browser_id, browser_label) in enumerate(entries):
+                if page.url != target_url:
+                    continue
+                try:
+                    page_title = await page.title()
+                except Exception:
+                    page_title = ""
+                matches.append(
+                    {
+                        "index": index,
+                        "browserId": browser_id,
+                        "browserLabel": browser_label,
+                        "url": page.url,
+                        "title": page_title,
+                    }
+                )
+
+            if matches:
+                status = "matched" if len(matches) == 1 else "ambiguous"
+            elif not browsers:
+                status = "no_debuggable_instances"
+            elif result["pages"] == 0:
+                status = "connected_instances_empty"
+            else:
+                status = "url_mismatch"
+            result["targetDiagnostic"] = {
+                "targetUrl": target_url,
+                "status": status,
+                "scope": "currently attached Chrome/Chromium pages",
+                "checkedPageCount": result["pages"],
+                "skippedInstanceCount": len(skipped),
+                "matches": matches,
+            }
         return result
 
     async def pages(self) -> list[Page]:
