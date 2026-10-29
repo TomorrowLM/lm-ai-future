@@ -1,4 +1,4 @@
-import { DEFAULT_SWAGGER_SOURCE, SWAGGER_QUERY_DEFAULTS, } from "../../../server/base/swagger/config/index.js";
+import { DEFAULT_SWAGGER_SOURCE, SWAGGER_QUERY_DEFAULTS, } from "./config/index.js";
 export const swaggerGetModelInputSchema = {
     type: "object",
     properties: {

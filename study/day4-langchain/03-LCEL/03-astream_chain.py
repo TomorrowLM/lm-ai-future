@@ -2,9 +2,15 @@ from langchain_openai import ChatOpenAI
 import asyncio
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+import os
+import core.config
 
 prompt = ChatPromptTemplate.from_template("给我讲一个关于{topic}的笑话")
-model = ChatOpenAI(model="gpt-4")
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 parser = StrOutputParser()
 chain = prompt | model | parser
 

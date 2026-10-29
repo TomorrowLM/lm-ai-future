@@ -12,7 +12,7 @@ model = ChatOpenAI(
 # 异步流处理
 async def async_stream():
     events = []
-    async for event in model.astream_events("hello", version="v2"):
+    async for event in model.astream_events("hello11", version="v2"):
         events.append(event)
     print(events)
 

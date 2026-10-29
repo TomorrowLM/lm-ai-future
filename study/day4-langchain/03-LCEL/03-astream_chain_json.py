@@ -11,9 +11,10 @@ model = ChatOpenAI(
     base_url=os.getenv("DEEPSEEK_BASE_URL"),
     api_key=os.getenv("DEEPSEEK_API_KEY"),
 )
-parser = StrOutputParser()
+parser = JsonOutputParser()
+# parser = StrOutputParser()
 chain = (
-        model | JsonOutputParser()
+        model | parser
     # 由于Langchain旧版本中的一个错误，JsonOutputParser未能从某些模型中流式传输结果
 )
 
@@ -25,6 +26,7 @@ async def async_stream():
             "每个国家都应该有键`name`和`population`"
     ):
         print(text, flush=True)
+        # print(text, end="", flush=True)
 
 
 # 运行异步流处理

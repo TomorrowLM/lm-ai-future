@@ -1,5 +1,5 @@
-// import { helloWorldTool, handleHelloWorldTool } from "../server/base/hello-world/index.js";
-import { swaggerGetModelTool, handleSwaggerGetModelTool } from "../server/base/swagger/index.js";
+// import { helloWorldTool, handleHelloWorldTool } from "./base/hello-world/index.js";
+import { swaggerGetModelTool, handleSwaggerGetModelTool } from "./base/swagger/index.js";
 // export const tools = [helloWorldTool, swaggerGetModelTool, createApiTool, createUiTool];
 export const tools = [swaggerGetModelTool];
 export async function dispatchTool(request) {

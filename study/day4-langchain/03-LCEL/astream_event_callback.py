@@ -2,9 +2,14 @@ from langchain_openai import ChatOpenAI
 import asyncio
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import tool
+import os
+import core.config
 
-model = ChatOpenAI(model="gpt-4")
-
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
 
 # 异步流处理
 async def async_stream():

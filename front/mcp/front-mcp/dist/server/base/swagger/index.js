@@ -1,10 +1,10 @@
 import { server } from "../../../server-instance.js";
-import { getSchemasRoot, isValidSpec, loadDocument, } from "../../../server/base/swagger/analys/index.js";
-import { parseFragment, buildCandidateUrls, tryFetchJson, } from "../../../server/base/swagger/analys/url-parser.js";
-import { DEFAULT_SWAGGER_SOURCE, resolveSwaggerSource, SWAGGER_NETWORK_TIMEOUT_MS, } from "../../../server/base/swagger/config/index.js";
-import { querySwaggerDocument } from "../../../server/base/swagger/query.js";
-import { swaggerGetModelInputSchema } from "../../../server/base/swagger/schema.js";
-import { findOperationByKeyword } from "../../../server/base/swagger/utils/index.js";
+import { getSchemasRoot, isValidSpec, loadDocument, } from "./analys/index.js";
+import { parseFragment, buildCandidateUrls, tryFetchJson, } from "./analys/url-parser.js";
+import { DEFAULT_SWAGGER_SOURCE, resolveSwaggerSource, SWAGGER_NETWORK_TIMEOUT_MS, } from "./config/index.js";
+import { querySwaggerDocument } from "./query.js";
+import { swaggerGetModelInputSchema } from "./schema.js";
+import { findOperationByKeyword } from "./utils/index.js";
 import { textResponseFromJson } from "../../../utils/text.js";
 export const swaggerGetModelTool = {
     name: "get_swagger_mcp",

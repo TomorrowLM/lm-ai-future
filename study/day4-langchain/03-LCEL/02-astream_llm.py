@@ -16,7 +16,7 @@ async def async_stream():
         chunks.append(chunk)
         # 判断chunks长度为1的时候，打印chunks[0]
         if len(chunks) == 2:
-            print(chunks[1])
+            print(chunks[1], 888)
         print(chunk.content, end="|", flush=True)
 # 运行异步流处理
 asyncio.run(async_stream())

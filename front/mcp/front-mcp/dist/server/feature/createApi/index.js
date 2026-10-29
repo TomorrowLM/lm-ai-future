@@ -1,5 +1,5 @@
 import { textResponseFromJson } from "../../../utils/text.js";
-import { handleSwaggerGetModelTool } from "../../../server/base/swagger/index.js";
+import { handleSwaggerGetModelTool } from "../../base/swagger/index.js";
 import { createApiToolInputSchema } from "./schema.js";
 import { buildCreateApiInstruction } from "./instruction.js";
 function getTextContent(content) {

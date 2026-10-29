@@ -1,4 +1,4 @@
-import { swaggerGetModelInputSchema } from "../../../server/base/swagger/schema.js";
+import { swaggerGetModelInputSchema } from "../../base/swagger/schema.js";
 const createApiToolItemInputSchema = {
     type: "object",
     properties: {

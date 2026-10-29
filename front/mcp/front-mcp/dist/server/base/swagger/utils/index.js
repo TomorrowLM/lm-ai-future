@@ -1,5 +1,5 @@
 /**
  * Swagger 工具函数统一导出
  */
-export * from "../../../../server/base/swagger/utils/schema.js";
-export * from "../../../../server/base/swagger/utils/operation.js";
+export * from "./schema.js";
+export * from "./operation.js";

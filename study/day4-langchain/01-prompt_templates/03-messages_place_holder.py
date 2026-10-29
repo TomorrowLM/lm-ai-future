@@ -6,7 +6,7 @@ prompt_template = ChatPromptTemplate.from_messages([
     MessagesPlaceholder("msgs")
 ])
 result = prompt_template.invoke({"msgs": [HumanMessage(content="hi!"),HumanMessage(content="hello!")]})
-#print(result)
+print(result)
 # messages=[SystemMessage(content='You are a helpful assistant'), HumanMessage(content='hi!')]
 
 # 另一种实现相同效果的替代方法是，不直接使用 MessagesPlaceholder 类，而使用placeholder
