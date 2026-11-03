@@ -86,7 +86,7 @@ uv run --directory front/mcp/lm-browser/python-core python server.py
 
 `connect_browsers` 会检查各平台的 Chrome/Chromium 默认用户数据目录，并读取运行进程参数中的自定义 `--user-data-dir`。只有存在有效 `DevToolsActivePort` 的实例才会连接；它不会启动浏览器、创建标签页或导航已有标签页。Chrome 144+ 可在目标实例打开 `chrome://inspect/#remote-debugging` 并允许远程调试；旧式 CDP 实例可使用 `--remote-debugging-port` 启动。MCP 进程必须能读取对应用户数据目录，macOS 隐私权限可能阻止读取。远程调试会让 MCP 访问该实例中已登录的页面，只应对可信的本地 MCP 启用。
 
-`connect_browsers(target_url="https://...")` 可选地按完整 URL（包括 query 和 hash）检查当前已连接实例的页面，不会创建页面或执行导航。`targetDiagnostic.status` 区分 `no_debuggable_instances`、`connected_instances_empty`、`url_mismatch`、`matched` 和 `ambiguous`；`scope` 与 `skippedInstanceCount` 说明诊断只覆盖已附加页面，且是否有已发现实例无法连接。
+`connect_browsers(target_url="https://...")` 可选地按完整 URL（包括 query 和 hash）检查当前已连接实例的页面，不会创建页面或执行导航。`targetDiagnostic.status` 区分 `no_debuggable_instances`、`attach_failed`、`connected_instances_empty`、`url_mismatch`、`matched` 和 `ambiguous`；`attach_failed` 表示发现了远程调试端点但 CDP 附加失败。CDP 连接每次最多等待 15 秒，遇到 Playwright 超时后等待 250 毫秒并重试一次；重试仍失败则保留错误原因，不承诺绝对连接成功。`scope` 与 `skippedInstanceCount` 说明诊断只覆盖已附加页面，且是否有已发现实例无法连接。
 
 `list_pages` 的 `index` 是所有已连接实例和 context 的全局索引，可直接传给页面操作工具。`browserId` 和 `browserLabel` 用于区分来源。`connect_browser` 仍支持手动指定单个 CDP endpoint。未启用远程调试、目录不可读或 endpoint 失效的实例不会被附加；此功能只发现 Chrome/Chromium，不扫描 Edge、Brave、Firefox 或 Safari。
 

@@ -1,7 +1,9 @@
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
+
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from front_automation_mcp.browser.session import BrowserConnection, BrowserSession
 
@@ -106,6 +108,33 @@ class BrowserTargetDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["status"], "no_debuggable_instances")
         self.assertEqual(diagnostic["skippedInstanceCount"], 1)
         self.assertEqual(result["skipped"][0]["reason"], "remote_debugging_not_enabled")
+
+    async def test_reports_attach_failure_when_debug_endpoint_was_found(self):
+        profile = Path("/tmp/chrome-profile")
+        session = BrowserSession()
+        with patch(
+            "front_automation_mcp.browser.session.default_chrome_user_data_dirs",
+            return_value=[profile],
+        ), patch(
+            "front_automation_mcp.browser.session.running_chrome_user_data_dirs",
+            return_value=[profile],
+        ), patch(
+            "front_automation_mcp.browser.session.read_devtools_active_port",
+            return_value="ws://127.0.0.1:49231/devtools/browser/test-session",
+        ), patch.object(
+            session,
+            "_attach_browser",
+            new=AsyncMock(side_effect=PlaywrightTimeoutError("connection timed out")),
+        ):
+            result = await session.connect_browsers(self.target_url)
+
+        diagnostic = result["targetDiagnostic"]
+        self.assertFalse(result["connected"])
+        self.assertEqual(diagnostic["status"], "attach_failed")
+        self.assertEqual(
+            result["skipped"][0]["reason"], "connection_failed:TimeoutError"
+        )
+        self.assertIn("attachment", result["message"].lower())
 
     async def test_keeps_existing_response_contract_when_target_url_is_omitted(self):
         session = self.make_session([SimpleNamespace(pages=[])])

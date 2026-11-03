@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+
 session_module = importlib.import_module("front_automation_mcp.browser.session")
 discovery_module = importlib.import_module("front_automation_mcp.browser.discovery")
 
@@ -187,6 +189,36 @@ class BrowserSessionMultiConnectTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(await session.page(1), second_page)
         page_entries = await session.page_entries()
         self.assertEqual(page_entries[1][1:], ("chrome-2", "Google Chrome Stable"))
+
+    async def test_retries_one_transient_cdp_timeout(self) -> None:
+        session = session_module.BrowserSession()
+        browser = SimpleNamespace(contexts=[])
+        connect_over_cdp = AsyncMock(
+            side_effect=[PlaywrightTimeoutError("connection timed out"), browser]
+        )
+        playwright = SimpleNamespace(
+            chromium=SimpleNamespace(connect_over_cdp=connect_over_cdp)
+        )
+        playwright_manager = SimpleNamespace(start=AsyncMock(return_value=playwright))
+
+        with patch.object(
+            session_module,
+            "async_playwright",
+            return_value=playwright_manager,
+        ), patch.object(
+            session_module.asyncio,
+            "sleep",
+            new_callable=AsyncMock,
+        ) as sleep:
+            connection = await session._attach_browser(
+                "ws://127.0.0.1:49231/devtools/browser/test-session",
+                "Google Chrome Stable",
+                Path("/profiles/chrome"),
+            )
+
+        self.assertIs(connection.browser, browser)
+        self.assertEqual(connect_over_cdp.await_count, 2)
+        sleep.assert_awaited_once()
 
     async def test_reports_when_no_debuggable_instance_is_found(self) -> None:
         session = session_module.BrowserSession()

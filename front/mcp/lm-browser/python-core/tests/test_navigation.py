@@ -118,7 +118,10 @@ class BrowserSessionConnectTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(first_result, second_result)
         self.assertEqual(first_result["pages"], 0)
-        connect_over_cdp.assert_awaited_once_with("http://127.0.0.1:9222")
+        connect_over_cdp.assert_awaited_once_with(
+            "http://127.0.0.1:9222",
+            timeout=15_000,
+        )
 
 
 class NormalizeControlNameTests(unittest.TestCase):

@@ -9,7 +9,14 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import (
+    Browser,
+    BrowserContext,
+    Page,
+    Playwright,
+    TimeoutError as PlaywrightTimeoutError,
+    async_playwright,
+)
 
 from .discovery import (
     default_chrome_user_data_dirs,
@@ -24,6 +31,10 @@ from .overlay import OverlayMixin
 from .readiness import ReadinessMixin
 from .scrolling import ScrollingMixin
 from .snapshot import SnapshotMixin
+
+
+CDP_CONNECT_TIMEOUT_MS = 15_000
+CDP_CONNECT_RETRY_DELAY_SECONDS = 0.25
 
 
 def normalize_browser_start_url(url: str) -> str:
@@ -94,7 +105,17 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
             return existing
         if self._pw is None:
             self._pw = await async_playwright().start()
-        browser = await self._pw.chromium.connect_over_cdp(cdp_url)
+        try:
+            browser = await self._pw.chromium.connect_over_cdp(
+                cdp_url,
+                timeout=CDP_CONNECT_TIMEOUT_MS,
+            )
+        except PlaywrightTimeoutError:
+            await asyncio.sleep(CDP_CONNECT_RETRY_DELAY_SECONDS)
+            browser = await self._pw.chromium.connect_over_cdp(
+                cdp_url,
+                timeout=CDP_CONNECT_TIMEOUT_MS,
+            )
         connection = BrowserConnection(
             browser_id=f"chrome-{len(self._connections) + 1}",
             label=label,
@@ -223,11 +244,20 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
             "pages": sum(browser["pages"] for browser in browsers),
             "skipped": skipped,
         }
+        attach_failed = any(
+            item["reason"].startswith("connection_failed:") for item in skipped
+        )
         if not browsers:
-            result["message"] = (
-                "No Chrome/Chromium instances with remote debugging enabled were found. "
-                "Enable remote debugging in each browser instance first."
-            )
+            if attach_failed:
+                result["message"] = (
+                    "A Chrome/Chromium remote debugging endpoint was found, "
+                    "but CDP attachment failed. Check browser access and retry."
+                )
+            else:
+                result["message"] = (
+                    "No Chrome/Chromium instances with remote debugging enabled were found. "
+                    "Enable remote debugging in each browser instance first."
+                )
         if target_url is not None:
             entries = (
                 await self.page_entries()
@@ -254,6 +284,8 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
 
             if matches:
                 status = "matched" if len(matches) == 1 else "ambiguous"
+            elif attach_failed:
+                status = "attach_failed"
             elif not browsers:
                 status = "no_debuggable_instances"
             elif result["pages"] == 0:
