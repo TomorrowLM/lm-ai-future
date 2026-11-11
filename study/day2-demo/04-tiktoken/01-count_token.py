@@ -1,13 +1,14 @@
 import os
-from learn.config import *
+import core.config
 from openai import OpenAI
 # pip install --upgrade tiktoken
 #tiktoken 用来统计token使用
 import tiktoken
 
 client = OpenAI(
+    # model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
     api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com",
 )
 # 初始化 tiktoken 编码器（DeepSeek 兼容 cl100k_base 编码，统计结果为近似值）
 encoder = tiktoken.get_encoding("cl100k_base")
@@ -15,6 +16,7 @@ encoder = tiktoken.get_encoding("cl100k_base")
 def count_tokens(text):
     # 将输入的文本text转换为对应的token列表。
     tokens = encoder.encode(text)
+    print(f"文本: {text}，tokens: {tokens}，token数量: {len(tokens)}");
     # 统计文本中的 token 数量（DeepSeek 实际 token 数可能有偏差）
     return len(tokens)
 
