@@ -27,7 +27,8 @@ store = {}
 
 def get_session_history(user_id: str, conversation_id: str) -> BaseChatMessageHistory:
     if (user_id, conversation_id) not in store:
-        store[(user_id, conversation_id)] = ChatMessageHistory()
+        store[(user_id, conversation_id)] = ChatMessageHistory();
+        print(store)
     return store[(user_id, conversation_id)]
 
 
@@ -60,7 +61,7 @@ response = with_message_history.invoke(
     {"ability": "math", "input": "余弦是什么意思？"},
     config={"configurable": {"user_id": "123", "conversation_id": "1"}},
 )
-print(1,response)
+print(1,store,response.content)
 #content='余弦是一个三角函数，它表示直角三角形的邻边长度和斜边长度的比值。' response_metadata={'token_usage': {'completion_tokens': 33, 'prompt_tokens': 38, 'total_tokens': 71}, 'model_name': 'gpt-4-0613', 'system_fingerprint': None, 'finish_reason': 'stop', 'logprobs': None} id='run-2d1eba02-4709-4db5-ab6b-0fd03ab4c68a-0' usage_metadata={'input_tokens': 38, 'output_tokens': 33, 'total_tokens': 71}
 
 

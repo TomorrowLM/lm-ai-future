@@ -30,6 +30,13 @@ agent = create_tool_calling_agent(model, tools, prompt)
 # 通过传入代理和工具来创建代理执行器
 agent_executor = AgentExecutor(agent=agent, tools=tools)
 response = agent_executor.invoke(
-    {"input": "谁执导了2023年的电影《奥本海默》，他多少岁了？"}
+    {
+        "input": "谁执导了2023年的电影《奥本海默》，他多少岁了？",
+        # "chat_history": [
+        #     ("human", "《奥本海默》的导演是谁？"),
+        #     ("ai", "克里斯托弗·诺兰。"),
+        # ],
+    },
+
 )
 print(response)

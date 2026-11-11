@@ -4,6 +4,8 @@ from langchain_community.agent_toolkits.load_tools import load_tools
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_community.callbacks.manager import get_openai_callback
+import core.config
+import os
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -12,7 +14,13 @@ prompt = ChatPromptTemplate.from_messages(
         ("placeholder", "{agent_scratchpad}"),
     ]
 )
-llm = ChatOpenAI(model="gpt-4", temperature=0)
+# llm = ChatOpenAI(model="gpt-4")
+llm = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"), 
+    temperature=0
+)
 tools = load_tools(["wikipedia"])
 agent = create_tool_calling_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(

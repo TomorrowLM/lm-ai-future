@@ -21,5 +21,8 @@ model = ChatOpenAI(
 #字典作为输入并返回消息作为输出
 runnable = prompt | model
 print(runnable)
-
-print(runnable.invoke({"ability": "math", "input": "余弦是什么意思？"}))
+ 
+print(runnable.invoke({
+    "ability": "math", 
+    "input": "余弦是什么意思？", 
+    "history": ["系统：请带上高中什么时候会学习余弦函数？"]}))

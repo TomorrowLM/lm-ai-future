@@ -3,6 +3,8 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
+import core.config;
+import os;
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -14,7 +16,13 @@ prompt = ChatPromptTemplate.from_messages(
         ("human", "{input}"),
     ]
 )
-model = ChatOpenAI(model="gpt-4")
+
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
+
 runnable = prompt | model
 
 store = {}
