@@ -1,13 +1,16 @@
 # pip install -qU langchain langchain-openai
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
-#langchain v0.2 使用以下引用pydantic
-from langchain_core.pydantic_v1 import BaseModel, Field
-#langchain v0.3 使用以下引用pydantic
-#from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+import core.config;
+import os;
 
-model = ChatOpenAI(model="gpt-4o", temperature=0)
+model = ChatOpenAI(
+    model="deepseek-chat",
+    base_url=os.getenv("DEEPSEEK_BASE_URL"),
+    api_key=os.getenv("DEEPSEEK_API_KEY")
+)
 
 # 定义您期望的数据结构。
 class Joke(BaseModel):

@@ -1,6 +1,6 @@
 import base64
 import httpx
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 import core.config
 import os
@@ -9,10 +9,19 @@ image_url = "https://pic1.arkoo.com/56D0B40F99F841DF8A2425762AE2565D/picture/o_1
 resp = httpx.get(image_url, headers={"User-Agent": "Mozilla/5.0"})
 resp.raise_for_status()
 image_data = base64.b64encode(resp.content).decode("utf-8")
+print(
+    resp.content, "\n", 
+    base64.b64encode(resp.content), "\n", 
+    image_data, "\n", 
+    f"data:image/jpeg;base64,{image_data}"
+)
 model = ChatOpenAI(
     model="deepseek-chat",
     base_url=os.getenv("DEEPSEEK_BASE_URL"),
     api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
+system_message = SystemMessage(
+    content="你是一个旅游大师"
 )
 message = HumanMessage(
     content=[
@@ -21,7 +30,7 @@ message = HumanMessage(
     ],
 )
 print(message)
-response = model.invoke([message])
+response = model.invoke([system_message, message])
 print(response.content)
 
 #response = model.invoke([message])

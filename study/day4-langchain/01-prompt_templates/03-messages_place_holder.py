@@ -17,4 +17,4 @@ prompt_template = ChatPromptTemplate.from_messages([
 # messages=[SystemMessage(content='You are a helpful assistant'), HumanMessage(content='hi!')]
 
 result = prompt_template.invoke({"msgs": [HumanMessage(content="hi!"),HumanMessage(content="hello!")]})
-print(result)
+print(result.messages[0])
