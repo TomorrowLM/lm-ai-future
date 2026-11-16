@@ -57,13 +57,14 @@ function pathSegments(targetPath: string) {
 
 function requirementDirFromPath(targetPath: string) {
   const normalized = path.normalize(targetPath)
-  const parts = pathSegments(normalized)
+  const root = path.parse(normalized).root
+  const parts = pathSegments(path.relative(root, normalized))
 
   for (const section of requirementSections) {
     const sectionIndex = parts.findIndex((part, index) => parts[index - 1] === 'docs' && part === section)
 
     if (sectionIndex >= 0 && parts[sectionIndex + 1]) {
-      return path.join(path.parse(normalized).root, ...parts.slice(0, sectionIndex + 2))
+      return path.join(root, ...parts.slice(0, sectionIndex + 2))
     }
   }
 

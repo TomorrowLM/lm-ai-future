@@ -106,6 +106,37 @@ test('createTask stores tasks.json under requirement dir for explicit design res
   assert.equal(result.tasks[0].resultFile, task.resultFile)
 })
 
+test('createTask stores tasks.json under requirement dir for absolute design result file', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-feature-absolute-store-'))
+  const resultFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    '2026-11-16-member-mobile-duplication-design',
+    'results',
+    '01-result.md',
+  )
+
+  const task = await createTask({
+    title: '绝对结果路径存储测试',
+    task: '验证绝对 resultFile 下的任务账本路径',
+    workspaceRoot,
+    resultFile,
+  })
+
+  const expectedStoreFile = path.join(
+    workspaceRoot,
+    'docs',
+    'design',
+    '2026-11-16-member-mobile-duplication-design',
+    'tasks.json',
+  )
+  const store = JSON.parse(await readFile(expectedStoreFile, 'utf8'))
+
+  assert.equal(task.resultFile, resultFile)
+  assert.equal(store.tasks[0].id, task.id)
+})
+
 test('createTask infers resultFile and tasks.json from requirement input file', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-feature-default-'))
   const inputFile = path.join(
