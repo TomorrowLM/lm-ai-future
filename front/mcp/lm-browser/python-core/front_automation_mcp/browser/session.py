@@ -7,7 +7,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+import re
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from playwright.async_api import (
     Browser,
@@ -35,6 +36,42 @@ from .snapshot import SnapshotMixin
 
 CDP_CONNECT_TIMEOUT_MS = 15_000
 CDP_CONNECT_RETRY_DELAY_SECONDS = 0.25
+_SENSITIVE_URL_PARAMETER = re.compile(
+    r"token|secret|password|passwd|pwd|authorization|cookie|session|credential|"
+    r"signature|api[_-]?key|access[_-]?key|(?:^|[_-])auth(?:$|[_-])|otp|"
+    r"verification[_-]?code|(?:^|[_-])code(?:$|[_-])|phone|mobile|email|"
+    r"(?:^|[_-])state(?:$|[_-])",
+    re.IGNORECASE,
+)
+
+
+def _redact_url_query(query: str) -> str:
+    return urlencode(
+        [
+            (
+                key,
+                "REDACTED" if _SENSITIVE_URL_PARAMETER.search(key) else value,
+            )
+            for key, value in parse_qsl(query, keep_blank_values=True)
+        ]
+    )
+
+
+def _diagnostic_url(url: str) -> str:
+    parsed = urlsplit(url)
+    fragment_path, separator, fragment_query = parsed.fragment.partition("?")
+    fragment = fragment_path
+    if separator:
+        fragment = f"{fragment_path}?{_redact_url_query(fragment_query)}"
+    return urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            _redact_url_query(parsed.query),
+            fragment,
+        )
+    )
 
 
 def normalize_browser_start_url(url: str) -> str:
@@ -292,7 +329,7 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
                 status = "connected_instances_empty"
             else:
                 status = "url_mismatch"
-            result["targetDiagnostic"] = {
+            diagnostic: dict[str, Any] = {
                 "targetUrl": target_url,
                 "status": status,
                 "scope": "currently attached Chrome/Chromium pages",
@@ -300,6 +337,19 @@ class BrowserSession(ControlMixin, NavigationMixin, InteractionMixin, OverlayMix
                 "skippedInstanceCount": len(skipped),
                 "matches": matches,
             }
+            if status == "url_mismatch":
+                candidates = []
+                for index, (page, browser_id, browser_label) in enumerate(entries):
+                    candidates.append(
+                        {
+                            "index": index,
+                            "browserId": browser_id,
+                            "browserLabel": browser_label,
+                            "url": _diagnostic_url(page.url),
+                        }
+                    )
+                diagnostic["candidates"] = candidates
+            result["targetDiagnostic"] = diagnostic
         return result
 
     async def pages(self) -> list[Page]:

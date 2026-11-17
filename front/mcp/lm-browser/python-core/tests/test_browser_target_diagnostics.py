@@ -46,8 +46,11 @@ class BrowserTargetDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["checkedPageCount"], 0)
         self.assertEqual(diagnostic["matches"], [])
 
-    async def test_distinguishes_pages_exist_but_full_target_url_does_not_match(self):
-        page = FakePage(self.target_url + "&tab=other", "Enterprise detail")
+    async def test_url_mismatch_returns_candidates_with_sensitive_values_redacted(self):
+        page = FakePage(
+            self.target_url + "&tab=other&access_token=secret-value",
+            "Enterprise detail",
+        )
         session = self.make_session([SimpleNamespace(pages=[page])])
         with patch("front_automation_mcp.browser.session.default_chrome_user_data_dirs", return_value=[]), patch(
             "front_automation_mcp.browser.session.running_chrome_user_data_dirs", return_value=[]
@@ -58,6 +61,17 @@ class BrowserTargetDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(diagnostic["status"], "url_mismatch")
         self.assertEqual(diagnostic["checkedPageCount"], 1)
         self.assertEqual(diagnostic["skippedInstanceCount"], 0)
+        self.assertEqual(
+            diagnostic["candidates"],
+            [
+                {
+                    "index": 0,
+                    "browserId": "chrome-1",
+                    "browserLabel": "Google Chrome Stable",
+                    "url": self.target_url + "&tab=other&access_token=REDACTED",
+                }
+            ],
+        )
 
     async def test_returns_global_index_for_exact_target_match(self):
         first = FakePage("https://example.test/other", "Other")
