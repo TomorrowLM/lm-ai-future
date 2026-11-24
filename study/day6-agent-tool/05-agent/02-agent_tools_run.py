@@ -21,31 +21,43 @@ response = wiki_session.get(
 )
 response.raise_for_status()
 
+# 将 HTML 解析为可查询的节点树。
 soup = BeautifulSoup(response.text, "html.parser")
+# 只提取维基百科页面的正文区域。
 content = soup.select_one("#mw-content-text .mw-parser-output")
 if content is None:
+    # 页面结构不符合预期时及时停止，避免后续处理空内容。
     raise ValueError("未能从维基百科页面中找到正文")
+# 移除脚本、样式、表格和导航等非正文内容。
 for element in content.select("script, style, table, .navbox, .metadata"):
     element.decompose()
 
+# 将正文文本和来源网址封装成 LangChain 文档，供后续切分与检索。
 docs = [
     Document(
         page_content=content.get_text(separator="\n", strip=True),
         metadata={"source": wiki_url},
     )
 ]
+# 将长文档切分为带少量重叠的文本块，降低分段对上下文的影响。
 documents = RecursiveCharacterTextSplitter(
     chunk_size=1000, chunk_overlap=200
 ).split_documents(docs)
+print(f"已将维基百科页面切分为 {len(documents)} 个文本块")
+# 为每个文本块生成向量，供后续按语义检索。
 embeddings = GLMEmbeddings(model="embedding-2")
+# 将文本块及其向量写入 Chroma 向量库。
 vector = Chroma.from_documents(documents, embeddings)
+# 创建检索器，供查询时从向量库中取回相关文本块。
 retriever = vector.as_retriever()
 
+# 将检索器包装为 Agent 可调用的工具，并提供名称和用途说明。
 retriever_tool = create_retriever_tool(
     retriever,
     "wiki_search",
     "搜索维基百科",
 )
+# 创建在线网页搜索工具，最多返回 1 条结果。
 search = TavilySearch(max_results=1)
 model = ChatOpenAI(
     model="deepseek-chat",
