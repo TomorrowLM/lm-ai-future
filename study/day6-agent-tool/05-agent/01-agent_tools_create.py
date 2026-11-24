@@ -1,19 +1,19 @@
 import os
 
-import requests
 from bs4 import BeautifulSoup
 from langchain.agents import create_agent
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.tools import create_retriever_tool
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_tavily import TavilySearch
 
-import core.config
+from core import GLMEmbeddings, create_requests_session
 
 wiki_url = "https://zh.wikipedia.org/wiki/%E7%8C%AB"
-response = requests.get(
+wiki_session = create_requests_session()
+response = wiki_session.get(
     wiki_url,
     headers={"User-Agent": "lm-ai-future study script/1.0"},
     timeout=30,
@@ -36,7 +36,7 @@ docs = [
 documents = RecursiveCharacterTextSplitter(
     chunk_size=1000, chunk_overlap=200
 ).split_documents(docs)
-vector = Chroma.from_documents(documents, OpenAIEmbeddings())
+vector = Chroma.from_documents(documents, GLMEmbeddings(model="embedding-2"))
 retriever = vector.as_retriever()
 
 retriever_tool = create_retriever_tool(
