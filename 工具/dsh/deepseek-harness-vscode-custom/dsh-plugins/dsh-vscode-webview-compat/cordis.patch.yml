@@ -1,0 +1,4 @@
+# One Cordis plugin row owns the three VS Code webview compatibility features.
+- insert:
+    - id: vscode-webview-compat
+      name: 'dsh-vscode-webview-compat'

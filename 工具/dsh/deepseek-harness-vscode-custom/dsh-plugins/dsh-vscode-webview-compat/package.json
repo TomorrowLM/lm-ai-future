@@ -1,0 +1,24 @@
+{
+  "name": "dsh-vscode-webview-compat",
+  "version": "0.1.0",
+  "description": "VS Code webview compatibility bundle for clipboard, external links, and workspace file links in DeepSeek Harness.",
+  "keywords": ["deepseek", "harness", "dsh", "cordis", "vscode", "webview"],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": ["lib", "cordis.patch.yml"],
+  "license": "MIT",
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-runtime"],
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -1,0 +1,4 @@
+# Register the reusable VS Code bridge client in the DSH web profile.
+- insert:
+    - id: vscode-bridge
+      name: 'dsh-vscode-bridge'
