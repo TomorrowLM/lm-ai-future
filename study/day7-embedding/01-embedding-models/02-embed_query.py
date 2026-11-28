@@ -1,7 +1,6 @@
-#pip install langchain-openai
+from core.embedding import GLMEmbeddings
 
-from langchain_openai import OpenAIEmbeddings
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = GLMEmbeddings()
 
 embeddings = embeddings_model.embed_documents(
     [

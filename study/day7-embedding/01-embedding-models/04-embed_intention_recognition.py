@@ -4,7 +4,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
+from core.embedding import GLMEmbeddings
 
 # 数据导入
 loader = TextLoader(".././resource/qa.txt", encoding="UTF-8")
@@ -13,7 +13,7 @@ docs = loader.load()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 # 创建embedding
-embeddings = OpenAIEmbeddings()
+embeddings = GLMEmbeddings()
 # 通过向量数据库存储
 vector = FAISS.from_documents(documents, embeddings)
 # 查询检索

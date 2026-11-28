@@ -1,7 +1,6 @@
-#pip install langchain-openai
+from core.embedding import GLMEmbeddings
 
-from langchain_openai import OpenAIEmbeddings
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = GLMEmbeddings()
 
 embeddings = embeddings_model.embed_documents(
     [
@@ -13,4 +12,4 @@ embeddings = embeddings_model.embed_documents(
     ]
 )
 #第一个打印是embeddings的文本数量，第二个打印是第一段文本的embedding向量维度
-print(len(embeddings), len(embeddings[0]))
+print(len(embeddings), len(embeddings[0]), embeddings[0])
