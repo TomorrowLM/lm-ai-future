@@ -1,0 +1,13 @@
+{
+  "name": "dsh-task-orchestrator",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": { ".": "./lib/index.js", "./client": "./lib/client.js", "./package.json": "./package.json" },
+  "files": ["lib", "cordis.patch.yml"],
+  "engines": { "node": ">=24.9.0", "dsh": ">=0.2.2-rc.3" },
+  "peerDependencies": { "@deepseek-ai/cordis": "~4.1.0", "react": "^18.2.0" },
+  "dsh": { "client": { "inject": ["@deepseek-ai/dsh-client-ui-sidebar"], "platform": "web" }, "bundle": { "patch": "./cordis.patch.yml" } },
+  "scripts": { "build": "node scripts/build.mjs", "pretest": "npm run build", "test": "node --test test/*.test.mjs" }
+}

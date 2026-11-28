@@ -1,0 +1,22 @@
+{
+  "tasks": [
+    {
+      "id": "task-0cf7f1d7-8685-4c05-a466-0331d259a5e9",
+      "title": "实现 DSH 任务拓扑编排工作台",
+      "task": "按工作区内已确认的技术方案和 implementation-plan.md，顺序实现任务拓扑会话工作台。先实际验证插件调用 DSH SessionController.create/prompt 的路径；实现每条拓扑会话独立 JSON 保存拓扑定义、sessionId 和节点运行状态；完成拓扑列表、新建时模板/自定义选择、可编辑画布、页面开发工作流六阶段模板、启动和运行状态 UI。遵循计划验收标准，运行项目 build/test，并更新 README。若 DSH API 在插件环境不可调用，停止启动链路并报告，不伪造成功状态。",
+      "workspaceRoot": "D:\\LM\\lm-ai-future\\工具\\dsh\\dsh-task-orchestrator",
+      "resources": [
+        "D:\\LM\\lm-ai-future\\工具\\dsh\\dsh-task-orchestrator\\docs\\design\\2026-11-26-task-orchestrator-workbench-design\\index.md",
+        "D:\\LM\\lm-ai-future\\工具\\dsh\\dsh-task-orchestrator\\docs\\design\\2026-11-26-task-orchestrator-workbench-design\\spec\\implementation-plan.md"
+      ],
+      "notes": "单个串行任务，对应用户选择的 A，不委派、不并行。若 API 探针阻断，不要继续实现会假报成功的启动操作；完成后回写实际变更、验证命令、结果和限制。",
+      "resultFile": "D:\\LM\\lm-ai-future\\工具\\dsh\\dsh-task-orchestrator\\docs\\design\\2026-11-26-task-orchestrator-workbench-design\\results\\workbench-implementation.md",
+      "visualDir": "D:\\LM\\lm-ai-future\\工具\\dsh\\dsh-task-orchestrator\\docs\\design\\2026-11-26-task-orchestrator-workbench-design\\assets",
+      "status": "reviewed",
+      "createdAt": "2026-11-27T02:19:59.521Z",
+      "updatedAt": "2026-11-27T02:28:39.367Z",
+      "completedAt": "2026-11-27T02:28:33.755Z",
+      "reviewNote": "Review completed: npm test passed 4/4 after final UI changes. Scope and limits are recorded; live browser/DSH authenticated end-to-end verification remains unverified."
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+已实现 React 拓扑工作台入口：拓扑列表（按浏览器本地路径目录索引）、模板/自定义新建、六阶段页面开发模板、节点名称/类型/说明/执行会话/前置依赖编辑、添加删除节点、每拓扑 JSON 保存。Host 新增 topology 读写和 start 路由；启动复用 sessionId 或调用 sessionController.create，先写回 ID 再通过 prompt 提交目标；提交失败写入 failed 状态。验证：npm test 4/4 通过，包含创建会话、写回 ID 和提交 prompt 的 stub 集成测试。限制：未完成真实浏览器加载验收；当前只向主会话提交整体目标，没有 Goal 完成监听或后续节点 DAG 调度，UI 明示节点状态不会自动推进；浏览器端路径目录使用 localStorage。
